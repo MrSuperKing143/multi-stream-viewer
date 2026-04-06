@@ -1,0 +1,536 @@
+import {
+  TWITCH_DEFAULT_PARENT_DOMAINS,
+  normalizeParentDomains,
+} from "@/lib/twitch-config";
+import type {
+  PlayerLayout,
+  ViewerPersistedState,
+  ViewerPlayer,
+  ViewerSettings,
+} from "@/types/viewer";
+
+export const TWITCH_MIN_PLAYER_SIZE = {
+  width: 400,
+  height: 300,
+};
+
+export const DEFAULT_PLAYER_SIZE = {
+  width: 480,
+  height: 300,
+};
+
+export const DEFAULT_VIEWER_SETTINGS: ViewerSettings = {
+  snapToGrid: false,
+  gridSize: 24,
+  showGrid: true,
+  parentDomains: TWITCH_DEFAULT_PARENT_DOMAINS,
+};
+
+export const DEFAULT_RUNTIME_STATUS = {
+  ready: false,
+  loading: true,
+  muted: true,
+  volume: 0.2,
+  paused: false,
+  error: null,
+};
+
+function clamp(value: number, min: number, max: number) {
+  return Math.min(Math.max(value, min), max);
+}
+
+function createPlayerId() {
+  return `stream-${Math.random().toString(36).slice(2, 10)}`;
+}
+
+export function normalizeChannelInput(value: string) {
+  const trimmed = value
+    .trim()
+    .replace(/^https?:\/\/(www\.)?twitch\.tv\//i, "")
+    .replace(/^@/, "")
+    .replace(/\/$/, "");
+
+  const channel = trimmed.split(/[/?#]/)[0] ?? "";
+
+  if (!/^[a-zA-Z0-9_]{3,25}$/.test(channel)) {
+    return null;
+  }
+
+  return channel.toLowerCase();
+}
+
+function createPlayerLayout(index: number): PlayerLayout {
+  const offset = (index % 6) * 36;
+  return {
+    x: 32 + offset,
+    y: 32 + offset,
+    width: DEFAULT_PLAYER_SIZE.width,
+    height: DEFAULT_PLAYER_SIZE.height,
+    zIndex: index + 1,
+  };
+}
+
+function createViewerPlayer(channel: string, index: number): ViewerPlayer {
+  return {
+    id: createPlayerId(),
+    channel,
+    layout: createPlayerLayout(index),
+    preferences: {
+      muted: index !== 0,
+      volume: index === 0 ? 0.85 : 0.35,
+      paused: false,
+    },
+  };
+}
+
+function nextZIndex(players: ViewerPlayer[]) {
+  return players.reduce((max, player) => Math.max(max, player.layout.zIndex), 0) + 1;
+}
+
+function cleanLayout(value: Partial<PlayerLayout> | undefined, fallback: PlayerLayout): PlayerLayout {
+  const nextWidth = Number(value?.width ?? fallback.width);
+  const nextHeight = Number(value?.height ?? fallback.height);
+
+  return {
+    x: clamp(Number(value?.x ?? fallback.x), 0, 9999),
+    y: clamp(Number(value?.y ?? fallback.y), 0, 9999),
+    width:
+      Number.isFinite(nextWidth) && nextWidth >= TWITCH_MIN_PLAYER_SIZE.width
+        ? nextWidth
+        : fallback.width,
+    height:
+      Number.isFinite(nextHeight) && nextHeight >= TWITCH_MIN_PLAYER_SIZE.height
+        ? nextHeight
+        : fallback.height,
+    zIndex: clamp(Number(value?.zIndex ?? fallback.zIndex), 1, 9999),
+  };
+}
+
+export function createDefaultViewerState(): ViewerPersistedState {
+  return {
+    players: [],
+    selectedPlayerId: null,
+    selectedChatPlayerId: null,
+    defaultChatPlayerId: null,
+    activeAudioPlayerId: null,
+    settings: { ...DEFAULT_VIEWER_SETTINGS },
+  };
+}
+
+export function sanitizeViewerState(input: unknown): ViewerPersistedState | null {
+  if (!input || typeof input !== "object") {
+    return null;
+  }
+
+  const value = input as Partial<ViewerPersistedState>;
+  const safePlayers = Array.isArray(value.players)
+    ? value.players
+        .map((player, index) => {
+          if (!player || typeof player !== "object") {
+            return null;
+          }
+
+          const fallbackLayout = createPlayerLayout(index);
+          const channel = normalizeChannelInput(String(player.channel ?? ""));
+
+          if (!channel) {
+            return null;
+          }
+
+          return {
+            id:
+              typeof player.id === "string" && player.id.trim().length > 0
+                ? player.id
+                : createPlayerId(),
+            channel,
+            layout: cleanLayout(player.layout, fallbackLayout),
+            preferences: {
+              muted: Boolean(player.preferences?.muted ?? index !== 0),
+              volume: clamp(
+                Number(player.preferences?.volume ?? (index === 0 ? 0.85 : 0.35)),
+                0,
+                1,
+              ),
+              paused: Boolean(player.preferences?.paused),
+            },
+          } satisfies ViewerPlayer;
+        })
+        .filter((player): player is ViewerPlayer => Boolean(player))
+    : [];
+
+  const safeSettings = {
+    snapToGrid: Boolean(value.settings?.snapToGrid),
+    gridSize: clamp(Number(value.settings?.gridSize ?? DEFAULT_VIEWER_SETTINGS.gridSize), 8, 96),
+    showGrid:
+      value.settings?.showGrid === undefined
+        ? DEFAULT_VIEWER_SETTINGS.showGrid
+        : Boolean(value.settings.showGrid),
+    parentDomains: normalizeParentDomains(value.settings?.parentDomains),
+  };
+
+  const ids = new Set(safePlayers.map((player) => player.id));
+  const firstId = safePlayers[0]?.id ?? null;
+
+  const resolveId = (candidate: string | null | undefined) =>
+    candidate && ids.has(candidate) ? candidate : firstId;
+
+  return {
+    players: safePlayers,
+    selectedPlayerId: resolveId(value.selectedPlayerId),
+    selectedChatPlayerId: resolveId(value.selectedChatPlayerId),
+    defaultChatPlayerId: resolveId(value.defaultChatPlayerId),
+    activeAudioPlayerId: resolveId(value.activeAudioPlayerId),
+    settings: safeSettings,
+  };
+}
+
+export type ViewerAction =
+  | { type: "hydrate"; state: ViewerPersistedState }
+  | { type: "add-players"; channels: string[] }
+  | { type: "remove-player"; playerId: string }
+  | { type: "reorder-player"; playerId: string; direction: -1 | 1 }
+  | { type: "update-layout"; playerId: string; layout: Partial<PlayerLayout> }
+  | { type: "bring-to-front"; playerId: string }
+  | { type: "select-player"; playerId: string | null }
+  | { type: "set-chat-player"; playerId: string | null }
+  | { type: "cycle-chat"; direction: -1 | 1 }
+  | { type: "set-default-chat-player"; playerId: string | null }
+  | { type: "set-active-audio-player"; playerId: string | null }
+  | {
+      type: "set-player-preferences";
+      playerId: string;
+      preferences: Partial<ViewerPlayer["preferences"]>;
+    }
+  | { type: "mute-all" }
+  | { type: "pause-all" }
+  | { type: "play-selected" }
+  | { type: "unmute-selected" }
+  | { type: "solo-selected" }
+  | { type: "sync-chat-to-selected" }
+  | { type: "update-settings"; settings: Partial<ViewerSettings> }
+  | { type: "set-parent-domains"; parentDomains: string[] }
+  | { type: "reset-layout" };
+
+function selectFallbackPlayerId(players: ViewerPlayer[], preferredId?: string | null) {
+  if (preferredId && players.some((player) => player.id === preferredId)) {
+    return preferredId;
+  }
+
+  return players[0]?.id ?? null;
+}
+
+export function viewerReducer(
+  state: ViewerPersistedState,
+  action: ViewerAction,
+): ViewerPersistedState {
+  switch (action.type) {
+    case "hydrate":
+      return action.state;
+
+    case "add-players": {
+      const nextPlayers = [...state.players];
+      let nextSelectedId = state.selectedPlayerId;
+      let nextChatId = state.selectedChatPlayerId;
+      let nextDefaultChatId = state.defaultChatPlayerId;
+      let nextActiveAudioId = state.activeAudioPlayerId;
+
+      action.channels.forEach((rawChannel) => {
+        const channel = normalizeChannelInput(rawChannel);
+
+        if (!channel) {
+          return;
+        }
+
+        const existingPlayer = nextPlayers.find((player) => player.channel === channel);
+
+        if (existingPlayer) {
+          existingPlayer.layout.zIndex = nextZIndex(nextPlayers);
+          nextSelectedId = existingPlayer.id;
+          return;
+        }
+
+        const player = createViewerPlayer(channel, nextPlayers.length);
+        player.layout.zIndex = nextZIndex(nextPlayers);
+        nextPlayers.push(player);
+        nextSelectedId = player.id;
+
+        if (!nextChatId) {
+          nextChatId = player.id;
+        }
+
+        if (!nextDefaultChatId) {
+          nextDefaultChatId = player.id;
+        }
+
+        if (!nextActiveAudioId) {
+          nextActiveAudioId = player.id;
+        }
+      });
+
+      return {
+        ...state,
+        players: nextPlayers,
+        selectedPlayerId: nextSelectedId,
+        selectedChatPlayerId: nextChatId,
+        defaultChatPlayerId: nextDefaultChatId,
+        activeAudioPlayerId: nextActiveAudioId,
+      };
+    }
+
+    case "remove-player": {
+      const nextPlayers = state.players.filter((player) => player.id !== action.playerId);
+      const fallbackId = nextPlayers[0]?.id ?? null;
+
+      return {
+        ...state,
+        players: nextPlayers,
+        selectedPlayerId: selectFallbackPlayerId(nextPlayers, state.selectedPlayerId === action.playerId ? fallbackId : state.selectedPlayerId),
+        selectedChatPlayerId: selectFallbackPlayerId(nextPlayers, state.selectedChatPlayerId === action.playerId ? state.defaultChatPlayerId : state.selectedChatPlayerId),
+        defaultChatPlayerId: selectFallbackPlayerId(nextPlayers, state.defaultChatPlayerId === action.playerId ? fallbackId : state.defaultChatPlayerId),
+        activeAudioPlayerId: selectFallbackPlayerId(nextPlayers, state.activeAudioPlayerId === action.playerId ? fallbackId : state.activeAudioPlayerId),
+      };
+    }
+
+    case "reorder-player": {
+      const index = state.players.findIndex((player) => player.id === action.playerId);
+      const targetIndex = index + action.direction;
+
+      if (index < 0 || targetIndex < 0 || targetIndex >= state.players.length) {
+        return state;
+      }
+
+      const nextPlayers = [...state.players];
+      const [movedPlayer] = nextPlayers.splice(index, 1);
+      nextPlayers.splice(targetIndex, 0, movedPlayer);
+
+      return {
+        ...state,
+        players: nextPlayers,
+      };
+    }
+
+    case "update-layout":
+      return {
+        ...state,
+        players: state.players.map((player) =>
+          player.id === action.playerId
+            ? {
+                ...player,
+                layout: cleanLayout(
+                  { ...player.layout, ...action.layout },
+                  player.layout,
+                ),
+              }
+            : player,
+        ),
+      };
+
+    case "bring-to-front":
+      return {
+        ...state,
+        selectedPlayerId: action.playerId,
+        players: state.players.map((player) =>
+          player.id === action.playerId
+            ? {
+                ...player,
+                layout: {
+                  ...player.layout,
+                  zIndex: nextZIndex(state.players),
+                },
+              }
+            : player,
+        ),
+      };
+
+    case "select-player":
+      return {
+        ...state,
+        selectedPlayerId: selectFallbackPlayerId(state.players, action.playerId),
+      };
+
+    case "set-chat-player":
+      return {
+        ...state,
+        selectedChatPlayerId: selectFallbackPlayerId(state.players, action.playerId),
+      };
+
+    case "cycle-chat": {
+      if (state.players.length === 0) {
+        return state;
+      }
+
+      const currentIndex = state.players.findIndex(
+        (player) => player.id === state.selectedChatPlayerId,
+      );
+      const nextIndex =
+        currentIndex >= 0
+          ? (currentIndex + action.direction + state.players.length) % state.players.length
+          : 0;
+
+      return {
+        ...state,
+        selectedChatPlayerId: state.players[nextIndex]?.id ?? null,
+      };
+    }
+
+    case "set-default-chat-player":
+      return {
+        ...state,
+        defaultChatPlayerId: selectFallbackPlayerId(state.players, action.playerId),
+      };
+
+    case "set-active-audio-player":
+      return {
+        ...state,
+        activeAudioPlayerId: selectFallbackPlayerId(state.players, action.playerId),
+        players: state.players.map((player) =>
+          player.id === action.playerId
+            ? {
+                ...player,
+                preferences: {
+                  ...player.preferences,
+                  muted: false,
+                },
+              }
+            : player,
+        ),
+      };
+
+    case "set-player-preferences":
+      return {
+        ...state,
+        players: state.players.map((player) =>
+          player.id === action.playerId
+            ? {
+                ...player,
+                preferences: {
+                  ...player.preferences,
+                  ...action.preferences,
+                  volume:
+                    action.preferences.volume === undefined
+                      ? player.preferences.volume
+                      : clamp(action.preferences.volume, 0, 1),
+                },
+              }
+            : player,
+        ),
+      };
+
+    case "mute-all":
+      return {
+        ...state,
+        players: state.players.map((player) => ({
+          ...player,
+          preferences: {
+            ...player.preferences,
+            muted: true,
+          },
+        })),
+      };
+
+    case "pause-all":
+      return {
+        ...state,
+        players: state.players.map((player) => ({
+          ...player,
+          preferences: {
+            ...player.preferences,
+            paused: true,
+          },
+        })),
+      };
+
+    case "play-selected":
+      return {
+        ...state,
+        players: state.players.map((player) =>
+          player.id === state.selectedPlayerId
+            ? {
+                ...player,
+                preferences: {
+                  ...player.preferences,
+                  paused: false,
+                },
+              }
+            : player,
+        ),
+      };
+
+    case "unmute-selected":
+      return {
+        ...state,
+        activeAudioPlayerId: state.selectedPlayerId ?? state.activeAudioPlayerId,
+        players: state.players.map((player) =>
+          player.id === state.selectedPlayerId
+            ? {
+                ...player,
+                preferences: {
+                  ...player.preferences,
+                  muted: false,
+                },
+              }
+            : player,
+        ),
+      };
+
+    case "solo-selected":
+      return {
+        ...state,
+        activeAudioPlayerId: state.selectedPlayerId,
+        players: state.players.map((player) => ({
+          ...player,
+          preferences: {
+            ...player.preferences,
+            muted: player.id !== state.selectedPlayerId,
+            paused:
+              player.id === state.selectedPlayerId
+                ? false
+                : player.preferences.paused,
+          },
+        })),
+      };
+
+    case "sync-chat-to-selected":
+      return {
+        ...state,
+        selectedChatPlayerId: selectFallbackPlayerId(
+          state.players,
+          state.selectedPlayerId,
+        ),
+      };
+
+    case "update-settings":
+      return {
+        ...state,
+        settings: {
+          ...state.settings,
+          ...action.settings,
+          gridSize:
+            action.settings.gridSize === undefined
+              ? state.settings.gridSize
+              : clamp(action.settings.gridSize, 8, 96),
+        },
+      };
+
+    case "set-parent-domains":
+      return {
+        ...state,
+        settings: {
+          ...state.settings,
+          parentDomains: normalizeParentDomains(action.parentDomains),
+        },
+      };
+
+    case "reset-layout":
+      return {
+        ...state,
+        players: state.players.map((player, index) => ({
+          ...player,
+          layout: createPlayerLayout(index),
+        })),
+      };
+
+    default:
+      return state;
+  }
+}

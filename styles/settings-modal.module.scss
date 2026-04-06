@@ -1,0 +1,165 @@
+.settingsModalBackdrop {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 1.5rem;
+  background: rgba(3, 6, 10, 0.72);
+  backdrop-filter: blur(16px);
+  z-index: 80;
+}
+
+.settingsModal {
+  width: min(900px, 100%);
+  max-height: min(92vh, 940px);
+  display: flex;
+  flex-direction: column;
+  border-radius: 28px;
+  border: 1px solid var(--line);
+  background: var(--bg);
+}
+
+.settingsModalHeader,
+.settingsModalFooter,
+.settingsResetRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.settingsModalHeader,
+.settingsModalFooter {
+  padding: 1.2rem 1.4rem;
+}
+
+.settingsModalBody {
+  display: flex;
+  min-height: 0;
+  flex-direction: column;
+  gap: 0.9rem;
+  padding: 0 1.4rem 1.4rem;
+  overflow: auto;
+}
+
+.eyebrow {
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.settingsBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  padding: 1.1rem;
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.03);
+
+  h3 {
+    margin: 0;
+  }
+
+  p {
+    margin: 0;
+    color: var(--text-soft);
+  }
+}
+
+.settingsInlineForm {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.sectionEmptyState {
+  padding: 1rem;
+  border: 1px dashed var(--line);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.settingsStreamList {
+  display: flex;
+  min-height: 0;
+  flex-direction: column;
+  gap: 0.9rem;
+  overflow: auto;
+}
+
+.settingsStreamRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 1rem;
+  align-items: center;
+  padding: 0.85rem 0.95rem;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.settingsStreamActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.statusPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.42rem 0.78rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text);
+  font-size: 0.84rem;
+  white-space: nowrap;
+}
+
+.statusPillChat {
+  color: var(--accent-warm);
+}
+
+.settingsGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.8rem 1rem;
+
+  select,
+  input[type="number"] {
+    width: 100%;
+  }
+}
+
+.toggleRow,
+.fieldRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.8rem 0.95rem;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.fieldRow {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.dangerButton {
+  color: var(--danger);
+}
+
+.settingsModalFooter p {
+  margin: 0;
+  color: var(--text-soft);
+}
+
+@media (max-width: 720px) {
+  .settingsGrid,
+  .settingsStreamRow {
+    grid-template-columns: 1fr;
+  }
+}

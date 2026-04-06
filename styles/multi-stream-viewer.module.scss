@@ -1,0 +1,190 @@
+.viewerShell {
+  display: flex;
+  min-height: 100vh;
+  flex-direction: column;
+}
+
+.viewerToolbar,
+.viewerSidebar,
+.viewerCanvasPanel,
+.canvasEmptyState {
+  border: 1px solid var(--line);
+}
+
+.viewerToolbar {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.4rem 1rem;
+
+  h1 {
+    margin: 0.15rem 0 0;
+  }
+}
+
+.brandCluster {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+}
+
+.brandMark {
+  display: grid;
+  width: 52px;
+  height: 52px;
+  place-items: center;
+  border-radius: 18px;
+  background:
+    linear-gradient(135deg, rgba(88, 212, 184, 0.3), rgba(88, 212, 184, 0.05)),
+    rgba(255, 255, 255, 0.04);
+  color: var(--accent);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.eyebrow {
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.toolbarStatus,
+.toolbarActions,
+.emptyStateActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.toolbarActionButton {
+  display: inline-grid;
+  width: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  place-items: center;
+  padding: 0.75rem;
+  line-height: 0;
+
+  svg {
+    width: 1.05rem;
+    height: 1.05rem;
+  }
+}
+
+.toolbarStatus {
+  justify-content: center;
+}
+
+.toolbarChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.42rem 0.78rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-soft);
+  font-size: 0.84rem;
+  white-space: nowrap;
+}
+
+.viewerMain {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  flex: 1;
+  min-height: 0;
+}
+
+.viewerCanvasPanel {
+  position: relative;
+  min-height: 0;
+}
+
+.viewerCanvas {
+  position: relative;
+  height: 100%;
+  min-height: 620px;
+  overflow: hidden;
+}
+
+.viewerCanvasGridVisible {
+  background-image:
+    linear-gradient(to right, rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+  background-size:
+    var(--grid-size) var(--grid-size),
+    var(--grid-size) var(--grid-size);
+}
+
+.canvasEmptyState {
+  position: absolute;
+  inset: 50% auto auto 50%;
+  width: min(640px, calc(100% - 4rem));
+  padding: 2rem 2.2rem;
+  transform: translate(-50%, -50%);
+  border-radius: 28px;
+  background: var(--bg);
+
+  h2 {
+    margin: 0.15rem 0 0;
+  }
+
+  p:last-of-type {
+    margin: 0;
+    color: var(--text-soft);
+  }
+}
+
+.viewerSidebar {
+  display: flex;
+  min-height: 0;
+  flex-direction: column;
+}
+
+@media (max-width: 1360px) {
+  .viewerToolbar {
+    grid-template-columns: 1fr;
+  }
+
+  .toolbarStatus,
+  .toolbarActions {
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 1120px) {
+  .viewerShell {
+    padding: 0.8rem;
+  }
+
+  .viewerMain {
+    grid-template-columns: 1fr;
+  }
+
+  .viewerCanvas {
+    height: 70vh;
+    min-height: 520px;
+  }
+
+  .viewerSidebar {
+    padding: 0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+}
+
+@media (max-width: 720px) {
+  .viewerToolbar,
+  .viewerCanvasPanel,
+  .viewerSidebar,
+  .canvasEmptyState {
+    border-radius: 20px;
+  }
+
+  .viewerCanvas {
+    min-height: 480px;
+  }
+}

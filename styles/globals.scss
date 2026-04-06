@@ -1,0 +1,107 @@
+:root {
+  --bg: #18181b;
+  --bg-elevated: rgba(12, 24, 40, 0.82);
+  --bg-panel: rgba(10, 18, 31, 0.88);
+  --bg-muted: rgba(148, 163, 184, 0.08);
+  --line: rgba(148, 163, 184, 0.16);
+  --line-strong: rgba(148, 163, 184, 0.28);
+  --text: #f7fbff;
+  --text-soft: #a8bbcf;
+  --text-muted: #73859c;
+  --accent: #58d4b8;
+  --accent-warm: #f0a464;
+  --danger: #f07d7d;
+  --shadow: 0 28px 90px rgba(2, 8, 17, 0.45);
+  --radius: 24px;
+  --radius-sm: 16px;
+  --grid-size: 24px;
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  min-height: 100%;
+}
+
+html {
+  background: var(--bg);
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-geist-sans), sans-serif;
+  color: var(--text);
+  background: transparent;
+}
+
+body.hasModalOpen {
+  overflow: hidden;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+button,
+select,
+input[type="checkbox"],
+input[type="range"] {
+  cursor: pointer;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 0.7rem 1rem;
+  background: rgba(255, 255, 255, 0.02);
+  transition:
+    border-color 140ms ease,
+    background-color 140ms ease,
+    transform 140ms ease;
+}
+
+button:hover:not(:disabled) {
+  border-color: var(--line-strong);
+  background: rgba(255, 255, 255, 0.06);
+  transform: translateY(-1px);
+}
+
+button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+input,
+select,
+textarea {
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 0.5rem 1rem;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+textarea {
+  resize: vertical;
+  min-height: 108px;
+}
+
+input:focus,
+select:focus,
+textarea:focus,
+button:focus-visible {
+  outline: 2px solid rgba(88, 212, 184, 0.35);
+  outline-offset: 2px;
+}
