@@ -1,6 +1,8 @@
 # Multi Stream Viewer
 
-A static-exportable Next.js App Router workspace for watching multiple Twitch streams at once.
+Multi Stream Viewer is a browser-based Twitch multiview workspace for watching and managing several live channels at the same time. It gives you a shared canvas for draggable, resizable player windows, a single synchronized chat panel, and persistent local settings so your viewing layout is restored when you come back. The app is built with Next.js and exports as a static site, so it can be hosted without a backend.
+
+> **Disclaimer**: Most of this project was generated using AI, with minor human review and adjustments.
 
 ## Stack
 
@@ -49,7 +51,7 @@ Twitch embeds require allowed `parent` hostnames.
 
 This app resolves parent domains from one place:
 
-- Default config: [`lib/twitch-config.ts`]
+- Default config: `lib/twitch-config.ts`
 - Optional build-time env var: `NEXT_PUBLIC_TWITCH_PARENTS`
 - Runtime settings modal override: saved in `localStorage`
 
@@ -90,6 +92,6 @@ The app stores viewer state in `localStorage`, including:
 ## Project Notes
 
 - Video players are created via `new Twitch.Player(...)` from `https://player.twitch.tv/js/embed/v1.js`
-- The Twitch script is loaded once through the shared loader in [`lib/twitch-script-loader.ts`]
+- The Twitch script is loaded once through the shared loader in `lib/twitch-script-loader.ts`
 - Each player window owns only its own `Twitch.Player` instance and cleans it up on unmount or reload
 - Chat uses Twitch’s static-compatible embed URL inside an iframe
