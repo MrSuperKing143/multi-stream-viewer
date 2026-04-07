@@ -20,7 +20,7 @@ Multi Stream Viewer is a browser-based Twitch multiview workspace for watching a
 - Overlap player windows and bring the focused stream to the front
 - Dedicated per-player controls section above the chat panel
 - Single active chat panel with previous, next, dropdown, and sync-to-selected controls
-- Global toolbar for mute, pause, play, solo, reload, and settings actions
+- Sidebar actions for adding streams and opening settings
 - Optional snap-to-grid, configurable grid size, and visible grid overlay
 - Local persistence for streams, layout, selected player, active chat, audio preferences, and grid settings
 - Static export output with no API routes, backend, or server actions

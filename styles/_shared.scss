@@ -1,0 +1,75 @@
+@mixin panel-column($border-color: var(--line)) {
+  display: flex;
+  min-height: 0;
+  flex-direction: column;
+  border: 1px solid $border-color;
+}
+
+@mixin cluster-row($justify: space-between, $gap: 1rem) {
+  display: flex;
+  align-items: center;
+  justify-content: $justify;
+  gap: $gap;
+}
+
+@mixin eyebrow {
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+@mixin surface(
+  $radius: 18px,
+  $background: rgba(255, 255, 255, 0.03),
+  $border-style: solid,
+  $border-color: var(--line)
+) {
+  border: 1px $border-style $border-color;
+  border-radius: $radius;
+  background: $background;
+}
+
+@mixin pill($color: var(--text)) {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.42rem 0.78rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.05);
+  color: $color;
+  font-size: 0.84rem;
+  white-space: nowrap;
+}
+
+@mixin icon-button(
+  $padding: 0.45rem,
+  $radius: 14px,
+  $min-size: null,
+  $icon-size: 1.27rem
+) {
+  display: inline-grid;
+  place-items: center;
+  padding: $padding;
+  border-radius: $radius;
+  line-height: 0;
+
+  @if $min-size != null {
+    min-width: $min-size;
+    min-height: $min-size;
+  }
+
+  svg {
+    width: $icon-size;
+    height: $icon-size;
+  }
+}
+
+@mixin bare-button {
+  border: 0;
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--text);
+}

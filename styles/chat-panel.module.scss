@@ -1,34 +1,16 @@
+@use "./shared" as shared;
+
 .sidebarSection {
-  display: flex;
-  min-height: 0;
-  flex-direction: column;
-  border: 1px solid var(--line);
+  @include shared.panel-column;
 }
 
 .chatSection {
   flex: 1;
 }
 
-.sectionHeading {
-  padding: 1rem;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.eyebrow {
-  margin: 0;
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-  font-size: 0.72rem;
-  color: var(--text-muted);
-}
-
 .sectionEmptyState {
   padding: 1rem;
-  border: 1px dashed var(--line);
-  border-radius: 5px;
-  background: rgba(255, 255, 255, 0.03);
+  @include shared.surface($radius: 5px, $border-style: dashed);
 }
 
 .chatToolbar {

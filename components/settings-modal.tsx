@@ -71,7 +71,7 @@ export function SettingsModal({
         <div className={styles.settingsModalHeader}>
           <div>
             <p className={styles.eyebrow}>Settings</p>
-            <h2>Streams, grid, chat, and embed domains</h2>
+            <h2>Streams, grid and chat</h2>
           </div>
           <button onClick={onClose} type="button">
             Close

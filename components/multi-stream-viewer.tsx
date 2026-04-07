@@ -3,7 +3,6 @@
 import {
   startTransition,
   type CSSProperties,
-  type ReactNode,
   useEffect,
   useReducer,
   useRef,
@@ -11,15 +10,6 @@ import {
 } from "react";
 
 import { ChatPanel } from "@/components/chat-panel";
-import {
-  ChatIcon,
-  MuteIcon,
-  PauseIcon,
-  PlayIcon,
-  RefreshIcon,
-  SoloIcon,
-  VolumeIcon,
-} from "@/components/control-icons";
 import { PlayerControlsPanel } from "@/components/player-controls-panel";
 import { SettingsModal } from "@/components/settings-modal";
 import { TwitchPlayerWindow } from "@/components/twitch-player-window";
@@ -29,6 +19,7 @@ import {
   normalizeChannelInput,
   viewerReducer,
 } from "@/lib/viewer-state";
+import { CogIcon } from "@/components/control-icons";
 import { loadViewerState, saveViewerState } from "@/lib/viewer-storage";
 import styles from "@/styles/multi-stream-viewer.module.scss";
 import type {
@@ -36,33 +27,6 @@ import type {
   TwitchPlayerController,
   ViewerPlayer,
 } from "@/types/viewer";
-
-interface ToolbarIconButtonProps {
-  label: string;
-  onClick: () => void;
-  children: ReactNode;
-  disabled?: boolean;
-}
-
-function ToolbarIconButton({
-  label,
-  onClick,
-  children,
-  disabled = false,
-}: ToolbarIconButtonProps) {
-  return (
-    <button
-      aria-label={label}
-      className={styles.toolbarActionButton}
-      disabled={disabled}
-      onClick={onClick}
-      title={label}
-      type="button"
-    >
-      {children}
-    </button>
-  );
-}
 
 export function MultiStreamViewer() {
   const [viewerState, dispatch] = useReducer(
@@ -99,9 +63,6 @@ export function MultiStreamViewer() {
     return () => document.body.classList.remove("hasModalOpen");
   }, [settingsOpen]);
 
-  const selectedPlayer =
-    viewerState.players.find((player) => player.id === viewerState.selectedPlayerId) ??
-    null;
   const activeChatPlayer =
     viewerState.players.find(
       (player) => player.id === viewerState.selectedChatPlayerId,
@@ -246,148 +207,9 @@ export function MultiStreamViewer() {
     bumpReloadTokens(playerIds);
   }
 
-  function handleMuteAll() {
-    dispatch({
-      type: "mute-all",
-    });
-
-    Object.values(controllersRef.current).forEach((controller) => {
-      controller.setMuted(true);
-    });
-  }
-
-  function handlePauseAll() {
-    dispatch({
-      type: "pause-all",
-    });
-
-    Object.values(controllersRef.current).forEach((controller) => {
-      controller.pause();
-    });
-  }
-
-  function handlePlaySelected() {
-    if (!selectedPlayer) {
-      return;
-    }
-
-    dispatch({
-      type: "play-selected",
-    });
-
-    controllersRef.current[selectedPlayer.id]?.play();
-  }
-
-  function handleUnmuteSelected() {
-    if (!selectedPlayer) {
-      return;
-    }
-
-    dispatch({
-      type: "unmute-selected",
-    });
-
-    controllersRef.current[selectedPlayer.id]?.setMuted(false);
-  }
-
-  function handleSoloSelected() {
-    if (!selectedPlayer) {
-      return;
-    }
-
-    dispatch({
-      type: "solo-selected",
-    });
-
-    viewerState.players.forEach((player) => {
-      const controller = controllersRef.current[player.id];
-
-      if (!controller) {
-        return;
-      }
-
-      controller.setMuted(player.id !== selectedPlayer.id);
-
-      if (player.id === selectedPlayer.id) {
-        controller.play();
-      }
-    });
-  }
-
   return (
     <>
       <div className={styles.viewerShell}>
-        <header className={styles.viewerToolbar}>
-          <div className={styles.brandCluster}>
-            <div>
-              <h1>Multi Stream Viewer</h1>
-            </div>
-          </div>
-
-          <div className={styles.toolbarStatus}>
-            <span className={styles.toolbarChip}>
-              Selected: {selectedPlayer?.channel ?? "None"}
-            </span>
-            <span className={styles.toolbarChip}>
-              Chat: {activeChatPlayer?.channel ?? "None"}
-            </span>
-            <span className={styles.toolbarChip}>
-              Grid {viewerState.settings.showGrid ? "Visible" : "Hidden"} ·{" "}
-              {viewerState.settings.gridSize}px
-            </span>
-          </div>
-
-          <div className={styles.toolbarActions}>
-            <button onClick={() => setSettingsOpen(true)} type="button">
-              Add Streams
-            </button>
-            <ToolbarIconButton label="Mute all players" onClick={handleMuteAll}>
-              <MuteIcon />
-            </ToolbarIconButton>
-            <ToolbarIconButton label="Pause all players" onClick={handlePauseAll}>
-              <PauseIcon />
-            </ToolbarIconButton>
-            <ToolbarIconButton
-              disabled={!selectedPlayer}
-              label="Play selected player"
-              onClick={handlePlaySelected}
-            >
-              <PlayIcon />
-            </ToolbarIconButton>
-            <ToolbarIconButton
-              disabled={!selectedPlayer}
-              label="Unmute selected player"
-              onClick={handleUnmuteSelected}
-            >
-              <VolumeIcon />
-            </ToolbarIconButton>
-            <ToolbarIconButton
-              disabled={!selectedPlayer}
-              label="Solo selected player"
-              onClick={handleSoloSelected}
-            >
-              <SoloIcon />
-            </ToolbarIconButton>
-            <ToolbarIconButton
-              disabled={viewerState.players.length === 0}
-              label="Reload all players"
-              onClick={() => reloadPlayers(viewerState.players.map((player) => player.id))}
-            >
-              <RefreshIcon />
-            </ToolbarIconButton>
-            <ToolbarIconButton
-              disabled={!selectedPlayer}
-              label="Sync chat to selected player"
-              onClick={() => dispatch({ type: "sync-chat-to-selected" })}
-            >
-              <ChatIcon />
-            </ToolbarIconButton>
-            <button onClick={() => setSettingsOpen(true)} type="button">
-              Settings
-            </button>
-          </div>
-        </header>
-
         <div className={styles.viewerMain}>
           <section className={styles.viewerCanvasPanel}>
             <div
@@ -462,6 +284,21 @@ export function MultiStreamViewer() {
           </section>
 
           <aside className={styles.viewerSidebar}>
+            <div className={styles.sidebarActions}>
+              <button onClick={() => setSettingsOpen(true)} type="button">
+                Add Streams
+              </button>
+              <button
+                aria-label="Open settings"
+                className={styles.sidebarIconButton}
+                onClick={() => setSettingsOpen(true)}
+                title="Settings"
+                type="button"
+              >
+                <CogIcon />
+              </button>
+            </div>
+
             <PlayerControlsPanel
               onReload={(playerId) => reloadPlayers([playerId])}
               onSelect={focusPlayer}

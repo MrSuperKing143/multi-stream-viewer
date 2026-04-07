@@ -6,8 +6,8 @@
   --line: rgba(148, 163, 184, 0.16);
   --line-strong: rgba(148, 163, 184, 0.28);
   --text: #f7fbff;
-  --text-soft: #a8bbcf;
-  --text-muted: #73859c;
+  --text-soft: #f7fbff;
+  --text-muted: #f7fbff;
   --accent: rgb(145, 71, 255);
   --accent-warm: #f0a464;
   --danger: #f07d7d;
@@ -64,7 +64,7 @@ a {
 
 button {
   border: 1px solid var(--line);
-  border-radius: 999px;
+  border-radius: 14px;
   padding: 0.5rem 0.8rem;
   background: rgba(255, 255, 255, 0.02);
   transition:
@@ -88,7 +88,7 @@ input,
 select,
 textarea {
   border: 1px solid var(--line);
-  border-radius: 18px;
+  border-radius: 14px;
   padding: 0.5rem 1rem;
   background: rgba(255, 255, 255, 0.04);
 }

@@ -1,93 +1,25 @@
+@use "./shared" as shared;
+
 .viewerShell {
   display: flex;
   min-height: 100vh;
   flex-direction: column;
 }
 
-.viewerToolbar,
 .viewerSidebar,
-.viewerCanvasPanel,
-.canvasEmptyState {
+.viewerCanvasPanel {
   border: 1px solid var(--line);
 }
 
-.viewerToolbar {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 1rem;
-  padding: 0.4rem 1rem;
-
-  h1 {
-    margin: 0.15rem 0 0;
-  }
-}
-
-.brandCluster {
-  display: flex;
-  align-items: center;
-  gap: 0.9rem;
-}
-
-.brandMark {
-  display: grid;
-  width: 52px;
-  height: 52px;
-  place-items: center;
-  border-radius: 18px;
-  background:
-    linear-gradient(135deg, rgba(88, 212, 184, 0.3), rgba(88, 212, 184, 0.05)),
-    rgba(255, 255, 255, 0.04);
-  color: var(--accent);
-  font-weight: 700;
-  letter-spacing: 0.08em;
-}
-
 .eyebrow {
-  margin: 0;
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-  font-size: 0.72rem;
-  color: var(--text-muted);
+  @include shared.eyebrow;
 }
 
-.toolbarStatus,
-.toolbarActions,
+.sidebarActions,
 .emptyStateActions {
   display: flex;
   flex-wrap: wrap;
   gap: 0.6rem;
-}
-
-.toolbarActionButton {
-  display: inline-grid;
-  width: 44px;
-  min-width: 44px;
-  min-height: 44px;
-  place-items: center;
-  padding: 0.75rem;
-  line-height: 0;
-
-  svg {
-    width: 1.05rem;
-    height: 1.05rem;
-  }
-}
-
-.toolbarStatus {
-  justify-content: center;
-}
-
-.toolbarChip {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  padding: 0.42rem 0.78rem;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.05);
-  color: var(--text-soft);
-  font-size: 0.84rem;
-  white-space: nowrap;
 }
 
 .viewerMain {
@@ -124,8 +56,7 @@
   width: min(640px, calc(100% - 4rem));
   padding: 2rem 2.2rem;
   transform: translate(-50%, -50%);
-  border-radius: 28px;
-  background: var(--bg);
+  @include shared.surface($radius: 28px, $background: var(--bg));
 
   h2 {
     margin: 0.15rem 0 0;
@@ -143,15 +74,13 @@
   flex-direction: column;
 }
 
-@media (max-width: 1360px) {
-  .viewerToolbar {
-    grid-template-columns: 1fr;
-  }
+.sidebarActions {
+  justify-content: space-between;
+  padding: 0.5rem;
+}
 
-  .toolbarStatus,
-  .toolbarActions {
-    justify-content: flex-start;
-  }
+.sidebarIconButton {
+  @include shared.icon-button($padding: 0.55rem, $min-size: 40px);
 }
 
 @media (max-width: 1120px) {
@@ -170,14 +99,12 @@
 
   .viewerSidebar {
     padding: 0;
-    border: 0;
     background: transparent;
     box-shadow: none;
   }
 }
 
 @media (max-width: 720px) {
-  .viewerToolbar,
   .viewerCanvasPanel,
   .viewerSidebar,
   .canvasEmptyState {

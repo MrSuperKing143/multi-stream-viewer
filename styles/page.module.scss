@@ -1,3 +1,5 @@
+@use "./shared" as shared;
+
 .viewerBootstrap {
   display: grid;
   min-height: 100vh;
@@ -8,9 +10,7 @@
 .viewerBootstrapPanel {
   width: min(680px, 100%);
   padding: 2rem 2.2rem;
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  background: rgba(255, 255, 255, 0.03);
+  @include shared.surface($radius: var(--radius));
 
   h1 {
     margin: 0.35rem 0 0;
@@ -19,9 +19,5 @@
 }
 
 .eyebrow {
-  margin: 0;
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-  font-size: 0.72rem;
-  color: var(--text-muted);
+  @include shared.eyebrow;
 }
