@@ -53,6 +53,7 @@ jobs:
           cache: ${{ steps.detect-package-manager.outputs.manager }}
 
       - name: Setup Pages
+        id: pages
         uses: actions/configure-pages@v5
         with:
           # Automatically inject basePath in your Next.js configuration file and disable
@@ -76,6 +77,8 @@ jobs:
         run: ${{ steps.detect-package-manager.outputs.manager }} ${{ steps.detect-package-manager.outputs.command }}
 
       - name: Build with Next.js
+        env:
+          NEXT_PUBLIC_TWITCH_PARENTS: ${{ steps.pages.outputs.host }}
         run: ${{ steps.detect-package-manager.outputs.runner }} next build
 
       - name: Upload artifact
