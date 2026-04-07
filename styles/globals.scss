@@ -8,7 +8,7 @@
   --text: #f7fbff;
   --text-soft: #a8bbcf;
   --text-muted: #73859c;
-  --accent: #58d4b8;
+  --accent: rgb(145, 71, 255);
   --accent-warm: #f0a464;
   --danger: #f07d7d;
   --shadow: 0 28px 90px rgba(2, 8, 17, 0.45);
@@ -65,7 +65,7 @@ a {
 button {
   border: 1px solid var(--line);
   border-radius: 999px;
-  padding: 0.7rem 1rem;
+  padding: 0.5rem 0.8rem;
   background: rgba(255, 255, 255, 0.02);
   transition:
     border-color 140ms ease,
@@ -102,6 +102,6 @@ input:focus,
 select:focus,
 textarea:focus,
 button:focus-visible {
-  outline: 2px solid rgba(88, 212, 184, 0.35);
+  outline: 2px solid rgba(145, 71, 255, 0.35);
   outline-offset: 2px;
 }
