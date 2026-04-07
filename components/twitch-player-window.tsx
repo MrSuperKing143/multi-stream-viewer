@@ -18,7 +18,6 @@ interface TwitchPlayerWindowProps {
   selected: boolean;
   activeChat: boolean;
   activeAudio: boolean;
-  parentDomains: string[];
   reloadToken: number;
   snapToGrid: boolean;
   gridSize: number;
@@ -37,7 +36,6 @@ export function TwitchPlayerWindow({
   selected,
   activeChat,
   activeAudio,
-  parentDomains,
   reloadToken,
   snapToGrid,
   gridSize,
@@ -49,7 +47,6 @@ export function TwitchPlayerWindow({
 }: TwitchPlayerWindowProps) {
   const { hostRef, status } = useTwitchPlayer({
     channel: player.channel,
-    parentDomains,
     preferences: player.preferences,
     reloadToken,
     onStateChange: (runtime) => onRuntimeChange(player.id, runtime),

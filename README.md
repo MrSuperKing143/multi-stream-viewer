@@ -49,11 +49,10 @@ Host the contents of `out/` on any static web host.
 
 Twitch embeds require allowed `parent` hostnames.
 
-This app resolves parent domains from one place:
+This app resolves parent domains from two sources:
 
 - Default config: `lib/twitch-config.ts`
 - Optional build-time env var: `NEXT_PUBLIC_TWITCH_PARENTS`
-- Runtime settings modal override: saved in `localStorage`
 
 Example:
 
@@ -87,7 +86,6 @@ The app stores viewer state in `localStorage`, including:
 - default chat stream
 - mute, volume, and paused intent
 - grid visibility, snap mode, and grid size
-- parent domain overrides
 
 ## Project Notes
 

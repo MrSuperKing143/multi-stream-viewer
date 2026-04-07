@@ -23,7 +23,6 @@ export interface ViewerSettings {
   snapToGrid: boolean;
   gridSize: number;
   showGrid: boolean;
-  parentDomains: string[];
 }
 
 export interface ViewerPersistedState {

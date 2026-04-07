@@ -314,15 +314,6 @@ export function MultiStreamViewer() {
     });
   }
 
-  function handleParentDomains(domains: string[]) {
-    dispatch({
-      type: "set-parent-domains",
-      parentDomains: domains,
-    });
-
-    reloadPlayers(viewerState.players.map((player) => player.id));
-  }
-
   return (
     <>
       <div className={styles.viewerShell}>
@@ -432,7 +423,6 @@ export function MultiStreamViewer() {
                   }
                   onRuntimeChange={registerRuntimeState}
                   onSelect={focusPlayer}
-                  parentDomains={viewerState.settings.parentDomains}
                   player={player}
                   reloadToken={reloadTokens[player.id] ?? 0}
                   selected={player.id === viewerState.selectedPlayerId}
@@ -497,7 +487,6 @@ export function MultiStreamViewer() {
                   direction,
                 })
               }
-              parentDomains={viewerState.settings.parentDomains}
               players={viewerState.players}
               selectedChatPlayerId={activeChatPlayer?.id ?? null}
             />
@@ -534,7 +523,6 @@ export function MultiStreamViewer() {
               playerId,
             })
           }
-          onSetParentDomains={handleParentDomains}
           onUpdateSettings={(settings) =>
             dispatch({
               type: "update-settings",

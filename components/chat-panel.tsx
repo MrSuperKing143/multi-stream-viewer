@@ -7,7 +7,6 @@ interface ChatPanelProps {
   players: ViewerPlayer[];
   selectedChatPlayerId: string | null;
   defaultChatPlayerId: string | null;
-  parentDomains: string[];
   onChangeChat: (playerId: string | null) => void;
   onCycleChat: (direction: -1 | 1) => void;
 }
@@ -16,7 +15,6 @@ export function ChatPanel({
   players,
   selectedChatPlayerId,
   defaultChatPlayerId,
-  parentDomains,
   onChangeChat,
   onCycleChat,
 }: ChatPanelProps) {
@@ -62,8 +60,8 @@ export function ChatPanel({
                       styles.chatFrame,
                       isActive && styles.chatFrameActive,
                     )}
-                    key={`${player.id}-${parentDomains.join(",")}`}
-                    src={buildTwitchChatUrl(player.channel, parentDomains)}
+                    key={player.id}
+                    src={buildTwitchChatUrl(player.channel)}
                     tabIndex={isActive ? 0 : -1}
                     title={`${player.channel} Twitch chat`}
                   />

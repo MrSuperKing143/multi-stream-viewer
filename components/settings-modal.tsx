@@ -16,7 +16,6 @@ interface SettingsModalProps {
   onReorderPlayer: (playerId: string, direction: -1 | 1) => void;
   onSetDefaultChatPlayer: (playerId: string | null) => void;
   onUpdateSettings: (settings: Partial<ViewerSettings>) => void;
-  onSetParentDomains: (domains: string[]) => void;
   onResetLayout: () => void;
 }
 
@@ -24,13 +23,6 @@ function parseDraftChannels(value: string) {
   return value
     .split(/[\s,]+/)
     .map((channel) => channel.trim())
-    .filter(Boolean);
-}
-
-function parseParentDomainDraft(value: string) {
-  return value
-    .split(/[\n,]+/)
-    .map((domain) => domain.trim())
     .filter(Boolean);
 }
 
@@ -44,11 +36,9 @@ export function SettingsModal({
   onReorderPlayer,
   onSetDefaultChatPlayer,
   onUpdateSettings,
-  onSetParentDomains,
   onResetLayout,
 }: SettingsModalProps) {
   const [streamDraft, setStreamDraft] = useState("");
-  const [parentDraft, setParentDraft] = useState(settings.parentDomains.join(", "));
   const [feedback, setFeedback] = useState<string | null>(null);
 
   function handleAddStreams() {
@@ -68,12 +58,6 @@ export function SettingsModal({
 
     setStreamDraft("");
     setFeedback(`Added ${addedCount} stream${addedCount === 1 ? "" : "s"}.`);
-  }
-
-  function handleSaveParents() {
-    const domains = parseParentDomainDraft(parentDraft);
-    onSetParentDomains(domains);
-    setFeedback("Updated the Twitch embed parent domain list.");
   }
 
   return (
@@ -222,24 +206,6 @@ export function SettingsModal({
             <div className={styles.settingsResetRow}>
               <button onClick={onResetLayout} type="button">
                 Reset Layout
-              </button>
-            </div>
-          </section>
-
-          <section className={styles.settingsBlock}>
-            <h3>Twitch parent domains</h3>
-            <p>
-              Include every hostname that may serve this static export. The app also
-              adds the current browser hostname automatically.
-            </p>
-            <div className={styles.settingsInlineForm}>
-              <textarea
-                onChange={(event) => setParentDraft(event.target.value)}
-                rows={3}
-                value={parentDraft}
-              />
-              <button onClick={handleSaveParents} type="button">
-                Save Domains
               </button>
             </div>
           </section>

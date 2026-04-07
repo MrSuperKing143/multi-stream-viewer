@@ -18,7 +18,6 @@ import type {
 
 interface UseTwitchPlayerArgs {
   channel: string;
-  parentDomains: string[];
   preferences: PlayerPreferences;
   reloadToken: number;
   onStateChange?: (state: PlayerRuntimeState) => void;
@@ -35,7 +34,6 @@ function safeRun(action: () => void) {
 
 export function useTwitchPlayer({
   channel,
-  parentDomains,
   preferences,
   reloadToken,
   onStateChange,
@@ -156,7 +154,7 @@ export function useTwitchPlayer({
 
     publishController(null);
 
-    const resolvedParents = resolveParentDomains(parentDomains);
+    const resolvedParents = resolveParentDomains();
 
     loadTwitchEmbedScript()
       .then((Twitch) => {
@@ -266,7 +264,6 @@ export function useTwitchPlayer({
     };
   }, [
     channel,
-    parentDomains,
     reloadToken,
   ]);
 

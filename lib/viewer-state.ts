@@ -1,7 +1,3 @@
-import {
-  TWITCH_DEFAULT_PARENT_DOMAINS,
-  normalizeParentDomains,
-} from "@/lib/twitch-config";
 import type {
   PlayerLayout,
   ViewerPersistedState,
@@ -23,7 +19,6 @@ export const DEFAULT_VIEWER_SETTINGS: ViewerSettings = {
   snapToGrid: false,
   gridSize: 24,
   showGrid: true,
-  parentDomains: TWITCH_DEFAULT_PARENT_DOMAINS,
 };
 
 export const DEFAULT_RUNTIME_STATUS = {
@@ -165,7 +160,6 @@ export function sanitizeViewerState(input: unknown): ViewerPersistedState | null
       value.settings?.showGrid === undefined
         ? DEFAULT_VIEWER_SETTINGS.showGrid
         : Boolean(value.settings.showGrid),
-    parentDomains: normalizeParentDomains(value.settings?.parentDomains),
   };
 
   const ids = new Set(safePlayers.map((player) => player.id));
@@ -208,7 +202,6 @@ export type ViewerAction =
   | { type: "solo-selected" }
   | { type: "sync-chat-to-selected" }
   | { type: "update-settings"; settings: Partial<ViewerSettings> }
-  | { type: "set-parent-domains"; parentDomains: string[] }
   | { type: "reset-layout" };
 
 function selectFallbackPlayerId(players: ViewerPlayer[], preferredId?: string | null) {
@@ -509,15 +502,6 @@ export function viewerReducer(
             action.settings.gridSize === undefined
               ? state.settings.gridSize
               : clamp(action.settings.gridSize, 8, 96),
-        },
-      };
-
-    case "set-parent-domains":
-      return {
-        ...state,
-        settings: {
-          ...state.settings,
-          parentDomains: normalizeParentDomains(action.parentDomains),
         },
       };
 

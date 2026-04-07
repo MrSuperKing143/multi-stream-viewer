@@ -29,7 +29,7 @@ export const TWITCH_DEFAULT_PARENT_DOMAINS = normalizeParentDomains(
   process.env.NEXT_PUBLIC_TWITCH_PARENTS,
 );
 
-export function resolveParentDomains(parentDomains: string[]) {
+export function resolveParentDomains() {
   const currentHost =
     typeof window === "undefined"
       ? null
@@ -37,14 +37,14 @@ export function resolveParentDomains(parentDomains: string[]) {
 
   return normalizeParentDomains([
     ...(currentHost ? [currentHost] : []),
-    ...parentDomains,
+    ...TWITCH_DEFAULT_PARENT_DOMAINS,
   ]);
 }
 
-export function buildTwitchChatUrl(channel: string, parentDomains: string[]) {
+export function buildTwitchChatUrl(channel: string) {
   const params = new URLSearchParams();
 
-  resolveParentDomains(parentDomains).forEach((domain) => {
+  resolveParentDomains().forEach((domain) => {
     params.append("parent", domain);
   });
 
