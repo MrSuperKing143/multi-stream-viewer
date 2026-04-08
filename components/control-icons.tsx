@@ -87,6 +87,22 @@ export function RefreshIcon(props: IconProps) {
   );
 }
 
+export function ChevronDownIcon(props: IconProps) {
+  return (
+    <IconFrame {...props}>
+      <path d="m6.5 9 5.5 6 5.5-6" />
+    </IconFrame>
+  );
+}
+
+export function ChevronRightIcon(props: IconProps) {
+  return (
+    <IconFrame {...props}>
+      <path d="m9 6.5 6 5.5-6 5.5" />
+    </IconFrame>
+  );
+}
+
 export function BroadcastIcon(props: IconProps) {
   return (
     <IconFrame {...props}>
