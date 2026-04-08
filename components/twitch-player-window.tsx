@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, type FocusEvent } from "react";
 import { Rnd } from "react-rnd";
 
 import { useTwitchPlayer } from "@/hooks/use-twitch-player";
@@ -52,6 +53,19 @@ export function TwitchPlayerWindow({
     onStateChange: (runtime) => onRuntimeChange(player.id, runtime),
     onControllerChange: (controller) => onControllerChange(player.id, controller),
   });
+  const [hovered, setHovered] = useState(false);
+  const [dragging, setDragging] = useState(false);
+  const [resizing, setResizing] = useState(false);
+  const [focusWithin, setFocusWithin] = useState(false);
+  const headerVisible = hovered || dragging || resizing || focusWithin;
+
+  function handleChromeBlur(event: FocusEvent<HTMLDivElement>) {
+    if (event.currentTarget.contains(event.relatedTarget)) {
+      return;
+    }
+
+    setFocusWithin(false);
+  }
 
   return (
     <Rnd
@@ -62,16 +76,26 @@ export function TwitchPlayerWindow({
       enableUserSelectHack={false}
       minHeight={TWITCH_MIN_PLAYER_SIZE.height}
       minWidth={TWITCH_MIN_PLAYER_SIZE.width}
-      onDragStart={() => onSelect(player.id)}
+      onPointerEnter={() => setHovered(true)}
+      onPointerLeave={() => setHovered(false)}
+      onDragStart={() => {
+        setDragging(true);
+        onSelect(player.id);
+      }}
       onDragStop={(_, data) => {
+        setDragging(false);
         onLayoutChange(player.id, {
           x: data.x,
           y: data.y,
         });
       }}
       onMouseDown={() => onSelect(player.id)}
-      onResizeStart={() => onSelect(player.id)}
+      onResizeStart={() => {
+        setResizing(true);
+        onSelect(player.id);
+      }}
       onResizeStop={(_, __, ref, ___, position) => {
+        setResizing(false);
         onLayoutChange(player.id, {
           x: position.x,
           y: position.y,
@@ -92,8 +116,17 @@ export function TwitchPlayerWindow({
         zIndex: player.layout.zIndex,
       }}
     >
-      <div className={styles.streamWindowChrome}>
-        <div className={styles.streamWindowHeader}>
+      <div
+        className={styles.streamWindowChrome}
+        onBlurCapture={handleChromeBlur}
+        onFocusCapture={() => setFocusWithin(true)}
+      >
+        <div
+          className={cn(
+            styles.streamWindowHeader,
+            headerVisible && styles.streamWindowHeaderVisible,
+          )}
+        >
           <button
             className={styles.streamWindowTitle}
             onClick={() => onSelect(player.id)}
