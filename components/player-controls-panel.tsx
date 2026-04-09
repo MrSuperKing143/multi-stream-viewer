@@ -35,10 +35,15 @@ interface PlayerControlsPanelProps {
 }
 
 function resolveState(player: ViewerPlayer, runtime?: PlayerRuntimeState) {
+  const volume =
+    typeof runtime?.volume === "number" && Number.isFinite(runtime.volume)
+      ? runtime.volume
+      : player.preferences.volume;
+
   return {
     muted: runtime?.muted ?? player.preferences.muted,
     paused: runtime?.paused ?? player.preferences.paused,
-    volume: runtime?.volume ?? player.preferences.volume,
+    volume,
     ready: runtime?.ready ?? false,
     loading: runtime?.loading ?? true,
     error: runtime?.error ?? null,

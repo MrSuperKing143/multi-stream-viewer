@@ -28,6 +28,20 @@ import type {
   ViewerPlayer,
 } from "@/types/viewer";
 
+function isSameRuntimeState(
+  current: PlayerRuntimeState | undefined,
+  next: PlayerRuntimeState,
+) {
+  return (
+    current?.ready === next.ready &&
+    current?.loading === next.loading &&
+    current?.muted === next.muted &&
+    current?.volume === next.volume &&
+    current?.paused === next.paused &&
+    current?.error === next.error
+  );
+}
+
 export function MultiStreamViewer() {
   const [viewerState, dispatch] = useReducer(
     viewerReducer,
@@ -43,10 +57,16 @@ export function MultiStreamViewer() {
 
   function registerRuntimeState(playerId: string, runtime: PlayerRuntimeState) {
     startTransition(() => {
-      setRuntimeByPlayerId((current) => ({
-        ...current,
-        [playerId]: runtime,
-      }));
+      setRuntimeByPlayerId((current) => {
+        if (isSameRuntimeState(current[playerId], runtime)) {
+          return current;
+        }
+
+        return {
+          ...current,
+          [playerId]: runtime,
+        };
+      });
     });
   }
 
@@ -131,10 +151,15 @@ export function MultiStreamViewer() {
 
   function getResolvedPlayerState(player: ViewerPlayer) {
     const runtime = runtimeByPlayerId[player.id];
+    const volume =
+      typeof runtime?.volume === "number" && Number.isFinite(runtime.volume)
+        ? runtime.volume
+        : player.preferences.volume;
+
     return {
       muted: runtime?.muted ?? player.preferences.muted,
       paused: runtime?.paused ?? player.preferences.paused,
-      volume: runtime?.volume ?? player.preferences.volume,
+      volume,
     };
   }
 

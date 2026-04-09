@@ -24,6 +24,32 @@ interface UseTwitchPlayerArgs {
   onControllerChange?: (controller: TwitchPlayerController | null) => void;
 }
 
+function clampVolume(volume: number) {
+  if (!Number.isFinite(volume)) {
+    return 0;
+  }
+
+  return Math.min(Math.max(volume, 0), 1);
+}
+
+function normalizeRuntimeState(state: PlayerRuntimeState): PlayerRuntimeState {
+  return {
+    ...state,
+    volume: Math.round(clampVolume(state.volume) * 100) / 100,
+  };
+}
+
+function isSameRuntimeState(a: PlayerRuntimeState, b: PlayerRuntimeState) {
+  return (
+    a.ready === b.ready &&
+    a.loading === b.loading &&
+    a.muted === b.muted &&
+    a.volume === b.volume &&
+    a.paused === b.paused &&
+    a.error === b.error
+  );
+}
+
 function safeRun(action: () => void) {
   try {
     action();
@@ -43,26 +69,41 @@ export function useTwitchPlayer({
   const playerRef = useRef<TwitchEmbed.PlayerInstance | null>(null);
   const pollRef = useRef<number | null>(null);
   const preferencesRef = useRef(preferences);
-  const [status, setStatus] = useState<PlayerRuntimeState>({
-    ready: false,
-    loading: true,
-    muted: preferences.muted,
-    volume: preferences.volume,
-    paused: preferences.paused,
-    error: null,
+  const [status, setStatus] = useState<PlayerRuntimeState>(() =>
+    normalizeRuntimeState({
+      ready: false,
+      loading: true,
+      muted: preferences.muted,
+      volume: preferences.volume,
+      paused: preferences.paused,
+      error: null,
+    }),
+  );
+  const statusRef = useRef(status);
+
+  const publishState = useEffectEvent((nextState: PlayerRuntimeState) => {
+    const normalizedState = normalizeRuntimeState(nextState);
+
+    if (isSameRuntimeState(statusRef.current, normalizedState)) {
+      return;
+    }
+
+    statusRef.current = normalizedState;
+
+    startTransition(() => {
+      setStatus(normalizedState);
+    });
+
+    onStateChange?.(normalizedState);
   });
+
+  useEffect(() => {
+    statusRef.current = status;
+  }, [status]);
 
   useEffect(() => {
     preferencesRef.current = preferences;
   }, [preferences]);
-
-  const publishState = useEffectEvent((nextState: PlayerRuntimeState) => {
-    startTransition(() => {
-      setStatus(nextState);
-    });
-
-    onStateChange?.(nextState);
-  });
 
   const publishController = useEffectEvent(
     (controller: TwitchPlayerController | null) => {
@@ -88,7 +129,8 @@ export function useTwitchPlayer({
 
     try {
       nextState.muted = player.getMuted();
-      nextState.volume = player.getVolume();
+      const volume = player.getVolume();
+      nextState.volume = Number.isFinite(volume) ? volume : preferences.volume;
       nextState.paused = player.isPaused?.() ?? preferences.paused;
     } catch {
       // Keep the last requested values if Twitch does not expose fresh state yet.
