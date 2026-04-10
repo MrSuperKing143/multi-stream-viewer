@@ -143,6 +143,19 @@
   }
 }
 
+.volumeControlDisabled {
+  color: var(--text-muted);
+
+  input[type="range"] {
+    cursor: not-allowed;
+    opacity: 0.45;
+  }
+
+  strong {
+    color: var(--text-muted);
+  }
+}
+
 .controlRowMeta,
 .controlRowMeta {
   margin: 0;

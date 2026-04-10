@@ -99,6 +99,7 @@ function PlayerActionButton({
 
 interface PlayerVolumeControlProps {
   channel: string;
+  disabled?: boolean;
   playerId: string;
   volume: number;
   onVolumeChange: (playerId: string, volume: number) => void;
@@ -106,6 +107,7 @@ interface PlayerVolumeControlProps {
 
 function PlayerVolumeControl({
   channel,
+  disabled = false,
   playerId,
   volume,
   onVolumeChange,
@@ -158,10 +160,13 @@ function PlayerVolumeControl({
   }
 
   return (
-    <label className={styles.volumeControl}>
+    <label
+      className={cn(styles.volumeControl, disabled && styles.volumeControlDisabled)}
+    >
       <span>Volume</span>
       <input
         aria-label={`${channel} volume`}
+        disabled={disabled}
         max={100}
         min={0}
         onBlur={() => setIsAdjusting(false)}
@@ -356,6 +361,7 @@ export function PlayerControlsPanel({
 
                 <PlayerVolumeControl
                   channel={player.channel}
+                  disabled={state.muted}
                   onVolumeChange={onVolumeChange}
                   playerId={player.id}
                   volume={state.volume}
