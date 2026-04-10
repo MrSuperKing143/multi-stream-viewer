@@ -1,6 +1,8 @@
 "use client";
 
 import {
+  type InputEvent,
+  type KeyboardEvent,
   useEffect,
   useRef,
   useState,
@@ -22,6 +24,17 @@ import { cn } from "@/lib/cn";
 import styles from "@/styles/player-controls-panel.module.scss";
 
 const CONTROL_ROW_LIMIT = 3;
+const VOLUME_MATCH_EPSILON = 0.0001;
+const VOLUME_ADJUSTMENT_KEYS = new Set([
+  "ArrowDown",
+  "ArrowLeft",
+  "ArrowRight",
+  "ArrowUp",
+  "End",
+  "Home",
+  "PageDown",
+  "PageUp",
+]);
 
 interface PlayerControlsPanelProps {
   players: ViewerPlayer[];
@@ -50,6 +63,14 @@ function resolveState(player: ViewerPlayer, runtime?: PlayerRuntimeState) {
   };
 }
 
+function volumesMatch(left: number, right: number) {
+  return Math.abs(left - right) <= VOLUME_MATCH_EPSILON;
+}
+
+function isVolumeAdjustmentKey(key: string) {
+  return VOLUME_ADJUSTMENT_KEYS.has(key);
+}
+
 interface PlayerActionButtonProps {
   label: string;
   onClick: () => void;
@@ -73,6 +94,88 @@ function PlayerActionButton({
     >
       {children}
     </button>
+  );
+}
+
+interface PlayerVolumeControlProps {
+  channel: string;
+  playerId: string;
+  volume: number;
+  onVolumeChange: (playerId: string, volume: number) => void;
+}
+
+function PlayerVolumeControl({
+  channel,
+  playerId,
+  volume,
+  onVolumeChange,
+}: PlayerVolumeControlProps) {
+  const [pendingVolume, setPendingVolume] = useState<number | null>(null);
+  const [isAdjusting, setIsAdjusting] = useState(false);
+
+  useEffect(() => {
+    if (
+      pendingVolume === null ||
+      isAdjusting ||
+      !volumesMatch(volume, pendingVolume)
+    ) {
+      return;
+    }
+
+    const cleanupId = window.setTimeout(() => {
+      setPendingVolume((current) =>
+        current !== null && volumesMatch(volume, current) ? null : current,
+      );
+    }, 0);
+
+    return () => {
+      window.clearTimeout(cleanupId);
+    };
+  }, [isAdjusting, pendingVolume, volume]);
+
+  const displayVolume = pendingVolume ?? volume;
+  const displayPercent = Math.round(displayVolume * 100);
+
+  function applyVolume(nextVolume: number) {
+    setPendingVolume(nextVolume);
+    onVolumeChange(playerId, nextVolume);
+  }
+
+  function handleVolumeInput(event: InputEvent<HTMLInputElement>) {
+    applyVolume(Number(event.currentTarget.value) / 100);
+  }
+
+  function handleKeyDown(event: KeyboardEvent<HTMLInputElement>) {
+    if (isVolumeAdjustmentKey(event.key)) {
+      setIsAdjusting(true);
+    }
+  }
+
+  function handleKeyUp(event: KeyboardEvent<HTMLInputElement>) {
+    if (isVolumeAdjustmentKey(event.key)) {
+      setIsAdjusting(false);
+    }
+  }
+
+  return (
+    <label className={styles.volumeControl}>
+      <span>Volume</span>
+      <input
+        aria-label={`${channel} volume`}
+        max={100}
+        min={0}
+        onBlur={() => setIsAdjusting(false)}
+        onInput={handleVolumeInput}
+        onKeyDown={handleKeyDown}
+        onKeyUp={handleKeyUp}
+        onPointerCancel={() => setIsAdjusting(false)}
+        onPointerDown={() => setIsAdjusting(true)}
+        onPointerUp={() => setIsAdjusting(false)}
+        type="range"
+        value={displayPercent}
+      />
+      <strong>{displayPercent}%</strong>
+    </label>
   );
 }
 
@@ -251,20 +354,12 @@ export function PlayerControlsPanel({
                   </div>
                 </div>
 
-                <label className={styles.volumeControl}>
-                  <span>Volume</span>
-                  <input
-                    aria-label={`${player.channel} volume`}
-                    max={100}
-                    min={0}
-                    onChange={(event) =>
-                      onVolumeChange(player.id, Number(event.target.value) / 100)
-                    }
-                    type="range"
-                    value={Math.round(state.volume * 100)}
-                  />
-                  <strong>{Math.round(state.volume * 100)}%</strong>
-                </label>
+                <PlayerVolumeControl
+                  channel={player.channel}
+                  onVolumeChange={onVolumeChange}
+                  playerId={player.id}
+                  volume={state.volume}
+                />
 
                 {state.ready ? null : (
                   <p className={styles.controlRowMeta}>

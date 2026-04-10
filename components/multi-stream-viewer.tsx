@@ -217,15 +217,17 @@ export function MultiStreamViewer() {
   }
 
   function setVolume(playerId: string, volume: number) {
-    dispatch({
-      type: "set-player-preferences",
-      playerId,
-      preferences: {
-        volume,
-      },
-    });
-
     controllersRef.current[playerId]?.setVolume(volume);
+
+    startTransition(() => {
+      dispatch({
+        type: "set-player-preferences",
+        playerId,
+        preferences: {
+          volume,
+        },
+      });
+    });
   }
 
   function reloadPlayers(playerIds: string[]) {
