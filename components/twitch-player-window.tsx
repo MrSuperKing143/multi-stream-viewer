@@ -16,6 +16,7 @@ import styles from "@/styles/twitch-player-window.module.scss";
 
 interface TwitchPlayerWindowProps {
   player: ViewerPlayer;
+  zIndex: number;
   selected: boolean;
   activeChat: boolean;
   activeAudio: boolean;
@@ -34,6 +35,7 @@ interface TwitchPlayerWindowProps {
 
 export function TwitchPlayerWindow({
   player,
+  zIndex,
   selected,
   activeChat,
   activeAudio,
@@ -113,7 +115,7 @@ export function TwitchPlayerWindow({
         height: player.layout.height,
       }}
       style={{
-        zIndex: player.layout.zIndex,
+        zIndex,
       }}
     >
       <div

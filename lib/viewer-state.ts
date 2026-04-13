@@ -19,6 +19,7 @@ export const DEFAULT_VIEWER_SETTINGS: ViewerSettings = {
   snapToGrid: false,
   gridSize: 24,
   showGrid: true,
+  streamStackOrder: "bottom-above-top",
 };
 
 export const DEFAULT_RUNTIME_STATUS = {
@@ -61,7 +62,6 @@ function createPlayerLayout(index: number): PlayerLayout {
     y: 32 + offset,
     width: DEFAULT_PLAYER_SIZE.width,
     height: DEFAULT_PLAYER_SIZE.height,
-    zIndex: index + 1,
   };
 }
 
@@ -76,10 +76,6 @@ function createViewerPlayer(channel: string, index: number): ViewerPlayer {
       paused: false,
     },
   };
-}
-
-function nextZIndex(players: ViewerPlayer[]) {
-  return players.reduce((max, player) => Math.max(max, player.layout.zIndex), 0) + 1;
 }
 
 function cleanLayout(value: Partial<PlayerLayout> | undefined, fallback: PlayerLayout): PlayerLayout {
@@ -97,7 +93,6 @@ function cleanLayout(value: Partial<PlayerLayout> | undefined, fallback: PlayerL
       Number.isFinite(nextHeight) && nextHeight >= TWITCH_MIN_PLAYER_SIZE.height
         ? nextHeight
         : fallback.height,
-    zIndex: clamp(Number(value?.zIndex ?? fallback.zIndex), 1, 9999),
   };
 }
 
@@ -160,6 +155,10 @@ export function sanitizeViewerState(input: unknown): ViewerPersistedState | null
       value.settings?.showGrid === undefined
         ? DEFAULT_VIEWER_SETTINGS.showGrid
         : Boolean(value.settings.showGrid),
+    streamStackOrder:
+      value.settings?.streamStackOrder === "top-above-bottom"
+        ? "top-above-bottom"
+        : DEFAULT_VIEWER_SETTINGS.streamStackOrder,
   };
 
   const ids = new Set(safePlayers.map((player) => player.id));
@@ -184,7 +183,6 @@ export type ViewerAction =
   | { type: "remove-player"; playerId: string }
   | { type: "reorder-player"; playerId: string; direction: -1 | 1 }
   | { type: "update-layout"; playerId: string; layout: Partial<PlayerLayout> }
-  | { type: "bring-to-front"; playerId: string }
   | { type: "select-player"; playerId: string | null }
   | { type: "set-chat-player"; playerId: string | null }
   | { type: "cycle-chat"; direction: -1 | 1 }
@@ -237,13 +235,11 @@ export function viewerReducer(
         const existingPlayer = nextPlayers.find((player) => player.channel === channel);
 
         if (existingPlayer) {
-          existingPlayer.layout.zIndex = nextZIndex(nextPlayers);
           nextSelectedId = existingPlayer.id;
           return;
         }
 
         const player = createViewerPlayer(channel, nextPlayers.length);
-        player.layout.zIndex = nextZIndex(nextPlayers);
         nextPlayers.push(player);
         nextSelectedId = player.id;
 
@@ -313,23 +309,6 @@ export function viewerReducer(
                   { ...player.layout, ...action.layout },
                   player.layout,
                 ),
-              }
-            : player,
-        ),
-      };
-
-    case "bring-to-front":
-      return {
-        ...state,
-        selectedPlayerId: action.playerId,
-        players: state.players.map((player) =>
-          player.id === action.playerId
-            ? {
-                ...player,
-                layout: {
-                  ...player.layout,
-                  zIndex: nextZIndex(state.players),
-                },
               }
             : player,
         ),

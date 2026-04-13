@@ -17,7 +17,7 @@ Multi Stream Viewer is a browser-based Twitch multiview workspace for watching a
 ## Features
 
 - Add multiple Twitch channels and arrange them freely on a shared canvas
-- Overlap player windows and bring the focused stream to the front
+- Overlap player windows and control stacking direction from the Settings stream list
 - Dedicated per-player controls section above the chat panel
 - Single active chat panel with previous, next, dropdown, and sync-to-selected controls
 - Sidebar actions for adding streams and opening settings
@@ -80,12 +80,12 @@ The app stores viewer state in `localStorage`, including:
 
 - stream list
 - player position and size
-- z-order
+- z-order derived from the stream list order
 - selected player
 - selected chat stream
 - default chat stream
 - mute, volume, and paused intent
-- grid visibility, snap mode, and grid size
+- grid visibility, snap mode, grid size, and stream stacking direction
 
 ## Project Notes
 

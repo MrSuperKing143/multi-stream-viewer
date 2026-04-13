@@ -42,6 +42,14 @@ function isSameRuntimeState(
   );
 }
 
+function getPlayerZIndex(
+  index: number,
+  playerCount: number,
+  streamStackOrder: "bottom-above-top" | "top-above-bottom",
+) {
+  return streamStackOrder === "top-above-bottom" ? playerCount - index : index + 1;
+}
+
 export function MultiStreamViewer() {
   const [viewerState, dispatch] = useReducer(
     viewerReducer,
@@ -116,9 +124,9 @@ export function MultiStreamViewer() {
     }
   }
 
-  function focusPlayer(playerId: string) {
+  function selectPlayer(playerId: string) {
     dispatch({
-      type: "bring-to-front",
+      type: "select-player",
       playerId,
     });
   }
@@ -250,7 +258,7 @@ export function MultiStreamViewer() {
                 } as CSSProperties
               }
             >
-              {viewerState.players.map((player) => (
+              {viewerState.players.map((player, index) => (
                 <TwitchPlayerWindow
                   activeAudio={player.id === viewerState.activeAudioPlayerId}
                   activeChat={player.id === activeChatPlayer?.id}
@@ -271,11 +279,16 @@ export function MultiStreamViewer() {
                     })
                   }
                   onRuntimeChange={registerRuntimeState}
-                  onSelect={focusPlayer}
+                  onSelect={selectPlayer}
                   player={player}
                   reloadToken={reloadTokens[player.id] ?? 0}
                   selected={player.id === viewerState.selectedPlayerId}
                   snapToGrid={viewerState.settings.snapToGrid}
+                  zIndex={getPlayerZIndex(
+                    index,
+                    viewerState.players.length,
+                    viewerState.settings.streamStackOrder,
+                  )}
                 />
               ))}
 
@@ -328,7 +341,7 @@ export function MultiStreamViewer() {
 
             <PlayerControlsPanel
               onReload={(playerId) => reloadPlayers([playerId])}
-              onSelect={focusPlayer}
+              onSelect={selectPlayer}
               onToggleMute={toggleMute}
               onTogglePlay={togglePlay}
               onVolumeChange={setVolume}

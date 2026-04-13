@@ -26,6 +26,14 @@ function parseDraftChannels(value: string) {
     .filter(Boolean);
 }
 
+function getStackOrderDescription(
+  streamStackOrder: ViewerSettings["streamStackOrder"],
+) {
+  return streamStackOrder === "top-above-bottom"
+    ? "Top of the list renders above lower streams on the canvas."
+    : "Lower streams in the list render above higher streams on the canvas.";
+}
+
 export function SettingsModal({
   players,
   settings,
@@ -99,6 +107,7 @@ export function SettingsModal({
 
           <section className={styles.settingsBlock}>
             <h3>Manage streams</h3>
+            <p>{getStackOrderDescription(settings.streamStackOrder)}</p>
             {players.length === 0 ? (
               <div className={styles.sectionEmptyState}>
                 <p>No streams yet. Add your first channel above.</p>
@@ -199,6 +208,25 @@ export function SettingsModal({
                       {player.channel}
                     </option>
                   ))}
+                </select>
+              </label>
+              <label className={styles.fieldRow}>
+                <span>Stream stacking</span>
+                <select
+                  onChange={(event) =>
+                    onUpdateSettings({
+                      streamStackOrder: event.target
+                        .value as ViewerSettings["streamStackOrder"],
+                    })
+                  }
+                  value={settings.streamStackOrder}
+                >
+                  <option value="bottom-above-top">
+                    Lower list items above higher ones
+                  </option>
+                  <option value="top-above-bottom">
+                    Higher list items above lower ones
+                  </option>
                 </select>
               </label>
             </div>

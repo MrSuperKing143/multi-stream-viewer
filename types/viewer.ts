@@ -3,7 +3,6 @@ export interface PlayerLayout {
   y: number;
   width: number;
   height: number;
-  zIndex: number;
 }
 
 export interface PlayerPreferences {
@@ -23,6 +22,7 @@ export interface ViewerSettings {
   snapToGrid: boolean;
   gridSize: number;
   showGrid: boolean;
+  streamStackOrder: "bottom-above-top" | "top-above-bottom";
 }
 
 export interface ViewerPersistedState {
