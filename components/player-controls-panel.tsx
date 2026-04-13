@@ -332,7 +332,8 @@ export function PlayerControlsPanel({
           {orderedPlayers.map((player) => {
             const state = resolveState(player, runtimeByPlayerId[player.id]);
             const selected = player.id === selectedPlayerId;
-            const controlsDisabled = state.hidden;
+            const mediaControlsDisabled = state.hidden || !state.ready;
+            const reloadDisabled = state.hidden;
 
             return (
               <article
@@ -360,21 +361,21 @@ export function PlayerControlsPanel({
                       {state.hidden ? <ShowIcon /> : <HideIcon />}
                     </PlayerActionButton>
                     <PlayerActionButton
-                      disabled={controlsDisabled}
+                      disabled={mediaControlsDisabled}
                       label={`${state.paused ? "Play" : "Pause"} ${player.channel}`}
                       onClick={() => onTogglePlay(player.id)}
                     >
                       {state.paused ? <PlayIcon /> : <PauseIcon />}
                     </PlayerActionButton>
                     <PlayerActionButton
-                      disabled={controlsDisabled}
+                      disabled={mediaControlsDisabled}
                       label={`${state.muted ? "Unmute" : "Mute"} ${player.channel}`}
                       onClick={() => onToggleMute(player.id)}
                     >
                       {state.muted ? <MuteIcon /> : <VolumeIcon />}
                     </PlayerActionButton>
                     <PlayerActionButton
-                      disabled={controlsDisabled}
+                      disabled={reloadDisabled}
                       label={`Reload ${player.channel}`}
                       onClick={() => onReload(player.id)}
                     >
@@ -385,7 +386,7 @@ export function PlayerControlsPanel({
 
                 <PlayerVolumeControl
                   channel={player.channel}
-                  disabled={controlsDisabled || state.muted}
+                  disabled={mediaControlsDisabled || state.muted}
                   onVolumeChange={onVolumeChange}
                   playerId={player.id}
                   volume={state.volume}

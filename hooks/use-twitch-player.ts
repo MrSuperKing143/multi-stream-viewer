@@ -142,31 +142,6 @@ export function useTwitchPlayer({
   });
 
   useEffect(() => {
-    const player = playerRef.current;
-
-    if (!player || !status.ready) {
-      return;
-    }
-
-    safeRun(() => player.setMuted(preferences.muted));
-    safeRun(() => player.setVolume(preferences.volume));
-
-    if (preferences.paused) {
-      safeRun(() => player.pause?.());
-    } else {
-      safeRun(() => player.play?.());
-    }
-
-    const timer = window.setTimeout(syncFromPlayer, 140);
-    return () => window.clearTimeout(timer);
-  }, [
-    preferences.muted,
-    preferences.paused,
-    preferences.volume,
-    status.ready,
-  ]);
-
-  useEffect(() => {
     let cancelled = false;
     let detachListeners: Array<() => void> = [];
     const initialPreferences = preferencesRef.current;
@@ -274,13 +249,23 @@ export function useTwitchPlayer({
           }
 
           readyRef.current = true;
-          syncFromPlayer();
+          const nextPreferences = preferencesRef.current;
+
+          safeRun(() => player.setMuted(nextPreferences.muted));
+          safeRun(() => player.setVolume(nextPreferences.volume));
+
+          if (nextPreferences.paused) {
+            safeRun(() => player.pause?.());
+          } else {
+            safeRun(() => player.play?.());
+          }
 
           if (pollRef.current) {
             window.clearInterval(pollRef.current);
           }
 
           pollRef.current = window.setInterval(syncFromPlayer, 1500);
+          window.setTimeout(syncFromPlayer, 140);
         };
 
         detachListeners = [
