@@ -197,7 +197,12 @@ export function PlayerControlsPanel({
   const [collapsed, setCollapsed] = useState(false);
   const [listMaxHeight, setListMaxHeight] = useState<number | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
-  const playerIdsKey = players.map((player) => player.id).join(",");
+  const orderedPlayers = [...players].sort(
+    (left, right) => left.layout.zIndex - right.layout.zIndex,
+  );
+  const playerIdsKey = orderedPlayers
+    .map((player) => `${player.id}:${player.layout.zIndex}`)
+    .join(",");
   const controlsCollapsed = players.length > 0 && collapsed;
   const showControlsBody = !controlsCollapsed;
 
@@ -316,7 +321,7 @@ export function PlayerControlsPanel({
           ref={listRef}
           style={controlListStyle}
         >
-          {players.map((player) => {
+          {orderedPlayers.map((player) => {
             const state = resolveState(player, runtimeByPlayerId[player.id]);
             const selected = player.id === selectedPlayerId;
 
