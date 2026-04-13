@@ -3,6 +3,7 @@ export interface PlayerLayout {
   y: number;
   width: number;
   height: number;
+  zIndex: number;
 }
 
 export interface PlayerPreferences {

@@ -43,11 +43,11 @@ function isSameRuntimeState(
 }
 
 function getPlayerZIndex(
-  index: number,
+  order: number,
   playerCount: number,
   streamStackOrder: "bottom-above-top" | "top-above-bottom",
 ) {
-  return streamStackOrder === "top-above-bottom" ? playerCount - index : index + 1;
+  return streamStackOrder === "top-above-bottom" ? playerCount - order + 1 : order;
 }
 
 export function MultiStreamViewer() {
@@ -258,7 +258,7 @@ export function MultiStreamViewer() {
                 } as CSSProperties
               }
             >
-              {viewerState.players.map((player, index) => (
+              {viewerState.players.map((player) => (
                 <TwitchPlayerWindow
                   activeAudio={player.id === viewerState.activeAudioPlayerId}
                   activeChat={player.id === activeChatPlayer?.id}
@@ -285,7 +285,7 @@ export function MultiStreamViewer() {
                   selected={player.id === viewerState.selectedPlayerId}
                   snapToGrid={viewerState.settings.snapToGrid}
                   zIndex={getPlayerZIndex(
-                    index,
+                    player.layout.zIndex,
                     viewerState.players.length,
                     viewerState.settings.streamStackOrder,
                   )}

@@ -48,6 +48,9 @@ export function SettingsModal({
 }: SettingsModalProps) {
   const [streamDraft, setStreamDraft] = useState("");
   const [feedback, setFeedback] = useState<string | null>(null);
+  const orderedPlayers = [...players].sort(
+    (left, right) => left.layout.zIndex - right.layout.zIndex,
+  );
 
   function handleAddStreams() {
     const channels = parseDraftChannels(streamDraft);
@@ -114,7 +117,7 @@ export function SettingsModal({
               </div>
             ) : (
               <div className={styles.settingsStreamList}>
-                {players.map((player, index) => (
+                {orderedPlayers.map((player, index) => (
                   <div className={styles.settingsStreamRow} key={player.id}>
                     <div>
                       <strong>{player.channel}</strong>

@@ -62,6 +62,7 @@ function createPlayerLayout(index: number): PlayerLayout {
     y: 32 + offset,
     width: DEFAULT_PLAYER_SIZE.width,
     height: DEFAULT_PLAYER_SIZE.height,
+    zIndex: index + 1,
   };
 }
 
@@ -78,9 +79,37 @@ function createViewerPlayer(channel: string, index: number): ViewerPlayer {
   };
 }
 
+function nextPlayerOrder(players: ViewerPlayer[]) {
+  return players.reduce((max, player) => Math.max(max, player.layout.zIndex), 0) + 1;
+}
+
+function normalizePlayerOrder(players: ViewerPlayer[]) {
+  const orderById = new Map(
+    [...players]
+      .sort((left, right) => {
+        const orderDelta = left.layout.zIndex - right.layout.zIndex;
+        if (orderDelta !== 0) {
+          return orderDelta;
+        }
+
+        return left.channel.localeCompare(right.channel);
+      })
+      .map((player, index) => [player.id, index + 1]),
+  );
+
+  return players.map((player) => ({
+    ...player,
+    layout: {
+      ...player.layout,
+      zIndex: orderById.get(player.id) ?? player.layout.zIndex,
+    },
+  }));
+}
+
 function cleanLayout(value: Partial<PlayerLayout> | undefined, fallback: PlayerLayout): PlayerLayout {
   const nextWidth = Number(value?.width ?? fallback.width);
   const nextHeight = Number(value?.height ?? fallback.height);
+  const nextZIndex = Number(value?.zIndex ?? fallback.zIndex);
 
   return {
     x: clamp(Number(value?.x ?? fallback.x), 0, 9999),
@@ -93,6 +122,8 @@ function cleanLayout(value: Partial<PlayerLayout> | undefined, fallback: PlayerL
       Number.isFinite(nextHeight) && nextHeight >= TWITCH_MIN_PLAYER_SIZE.height
         ? nextHeight
         : fallback.height,
+    zIndex:
+      Number.isFinite(nextZIndex) && nextZIndex >= 1 ? Math.floor(nextZIndex) : fallback.zIndex,
   };
 }
 
@@ -147,6 +178,7 @@ export function sanitizeViewerState(input: unknown): ViewerPersistedState | null
         })
         .filter((player): player is ViewerPlayer => Boolean(player))
     : [];
+  const orderedPlayers = normalizePlayerOrder(safePlayers);
 
   const safeSettings = {
     snapToGrid: Boolean(value.settings?.snapToGrid),
@@ -162,13 +194,13 @@ export function sanitizeViewerState(input: unknown): ViewerPersistedState | null
   };
 
   const ids = new Set(safePlayers.map((player) => player.id));
-  const firstId = safePlayers[0]?.id ?? null;
+  const firstId = orderedPlayers[0]?.id ?? null;
 
   const resolveId = (candidate: string | null | undefined) =>
     candidate && ids.has(candidate) ? candidate : firstId;
 
   return {
-    players: safePlayers,
+    players: orderedPlayers,
     selectedPlayerId: resolveId(value.selectedPlayerId),
     selectedChatPlayerId: resolveId(value.selectedChatPlayerId),
     defaultChatPlayerId: resolveId(value.defaultChatPlayerId),
@@ -240,6 +272,7 @@ export function viewerReducer(
         }
 
         const player = createViewerPlayer(channel, nextPlayers.length);
+        player.layout.zIndex = nextPlayerOrder(nextPlayers);
         nextPlayers.push(player);
         nextSelectedId = player.id;
 
@@ -267,7 +300,9 @@ export function viewerReducer(
     }
 
     case "remove-player": {
-      const nextPlayers = state.players.filter((player) => player.id !== action.playerId);
+      const nextPlayers = normalizePlayerOrder(
+        state.players.filter((player) => player.id !== action.playerId),
+      );
       const fallbackId = nextPlayers[0]?.id ?? null;
 
       return {
@@ -281,20 +316,48 @@ export function viewerReducer(
     }
 
     case "reorder-player": {
-      const index = state.players.findIndex((player) => player.id === action.playerId);
+      const orderedPlayers = [...state.players].sort(
+        (left, right) => left.layout.zIndex - right.layout.zIndex,
+      );
+      const index = orderedPlayers.findIndex((player) => player.id === action.playerId);
       const targetIndex = index + action.direction;
 
-      if (index < 0 || targetIndex < 0 || targetIndex >= state.players.length) {
+      if (index < 0 || targetIndex < 0 || targetIndex >= orderedPlayers.length) {
         return state;
       }
 
-      const nextPlayers = [...state.players];
-      const [movedPlayer] = nextPlayers.splice(index, 1);
-      nextPlayers.splice(targetIndex, 0, movedPlayer);
+      const currentPlayer = orderedPlayers[index];
+      const targetPlayer = orderedPlayers[targetIndex];
+
+      if (!currentPlayer || !targetPlayer) {
+        return state;
+      }
 
       return {
         ...state,
-        players: nextPlayers,
+        players: state.players.map((player) => {
+          if (player.id === currentPlayer.id) {
+            return {
+              ...player,
+              layout: {
+                ...player.layout,
+                zIndex: targetPlayer.layout.zIndex,
+              },
+            };
+          }
+
+          if (player.id === targetPlayer.id) {
+            return {
+              ...player,
+              layout: {
+                ...player.layout,
+                zIndex: currentPlayer.layout.zIndex,
+              },
+            };
+          }
+
+          return player;
+        }),
       };
     }
 
@@ -489,7 +552,10 @@ export function viewerReducer(
         ...state,
         players: state.players.map((player, index) => ({
           ...player,
-          layout: createPlayerLayout(index),
+          layout: {
+            ...createPlayerLayout(index),
+            zIndex: player.layout.zIndex,
+          },
         })),
       };
 
