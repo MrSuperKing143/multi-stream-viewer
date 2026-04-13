@@ -76,6 +76,26 @@ export function MuteIcon(props: IconProps) {
   );
 }
 
+export function ShowIcon(props: IconProps) {
+  return (
+    <IconFrame {...props}>
+      <path d="M2.75 12s3.4-5.75 9.25-5.75S21.25 12 21.25 12 17.85 17.75 12 17.75 2.75 12 2.75 12Z" />
+      <circle cx="12" cy="12" fill="currentColor" r="2.15" stroke="none" />
+    </IconFrame>
+  );
+}
+
+export function HideIcon(props: IconProps) {
+  return (
+    <IconFrame {...props}>
+      <path d="M4 4l16 16" />
+      <path d="M9.3 6.7A10.7 10.7 0 0 1 12 6.25c5.85 0 9.25 5.75 9.25 5.75a16.85 16.85 0 0 1-3.14 3.75" />
+      <path d="M14.35 14.35A3.35 3.35 0 0 1 9.65 9.65" />
+      <path d="M6.37 9.03A16.4 16.4 0 0 0 2.75 12s3.4 5.75 9.25 5.75a10.8 10.8 0 0 0 3.05-.43" />
+    </IconFrame>
+  );
+}
+
 export function RefreshIcon(props: IconProps) {
   return (
     <IconFrame {...props}>

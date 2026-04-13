@@ -13,10 +13,12 @@ import {
 import {
   ChevronDownIcon,
   ChevronRightIcon,
+  HideIcon,
   MuteIcon,
   PauseIcon,
   PlayIcon,
   RefreshIcon,
+  ShowIcon,
   VolumeIcon,
 } from "@/components/control-icons";
 import type { PlayerRuntimeState, ViewerPlayer } from "@/types/viewer";
@@ -41,6 +43,7 @@ interface PlayerControlsPanelProps {
   runtimeByPlayerId: Record<string, PlayerRuntimeState | undefined>;
   selectedPlayerId: string | null;
   onSelect: (playerId: string) => void;
+  onToggleHidden: (playerId: string) => void;
   onTogglePlay: (playerId: string) => void;
   onToggleMute: (playerId: string) => void;
   onVolumeChange: (playerId: string, volume: number) => void;
@@ -57,6 +60,7 @@ function resolveState(player: ViewerPlayer, runtime?: PlayerRuntimeState) {
     muted: runtime?.muted ?? player.preferences.muted,
     paused: runtime?.paused ?? player.preferences.paused,
     volume,
+    hidden: player.preferences.hidden,
     ready: runtime?.ready ?? false,
     loading: runtime?.loading ?? true,
     error: runtime?.error ?? null,
@@ -189,6 +193,7 @@ export function PlayerControlsPanel({
   runtimeByPlayerId,
   selectedPlayerId,
   onSelect,
+  onToggleHidden,
   onTogglePlay,
   onToggleMute,
   onVolumeChange,
@@ -343,6 +348,12 @@ export function PlayerControlsPanel({
                     {player.channel}
                   </button>
                   <div className={styles.controlRowActions}>
+                    <PlayerActionButton
+                      label={`${state.hidden ? "Show" : "Hide"} ${player.channel}`}
+                      onClick={() => onToggleHidden(player.id)}
+                    >
+                      {state.hidden ? <ShowIcon /> : <HideIcon />}
+                    </PlayerActionButton>
                     <PlayerActionButton
                       label={`${state.paused ? "Play" : "Pause"} ${player.channel}`}
                       onClick={() => onTogglePlay(player.id)}

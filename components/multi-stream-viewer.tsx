@@ -100,6 +100,9 @@ export function MultiStreamViewer() {
     ) ??
     viewerState.players[0] ??
     null;
+  const visiblePlayers = viewerState.players.filter(
+    (player) => !player.preferences.hidden,
+  );
 
   function bumpReloadTokens(playerIds: string[]) {
     setReloadTokens((current) => {
@@ -238,6 +241,22 @@ export function MultiStreamViewer() {
     });
   }
 
+  function toggleHidden(playerId: string) {
+    const player = findPlayer(playerId);
+
+    if (!player) {
+      return;
+    }
+
+    dispatch({
+      type: "set-player-preferences",
+      playerId,
+      preferences: {
+        hidden: !player.preferences.hidden,
+      },
+    });
+  }
+
   function reloadPlayers(playerIds: string[]) {
     bumpReloadTokens(playerIds);
   }
@@ -258,7 +277,7 @@ export function MultiStreamViewer() {
                 } as CSSProperties
               }
             >
-              {viewerState.players.map((player) => (
+              {visiblePlayers.map((player) => (
                 <TwitchPlayerWindow
                   activeAudio={player.id === viewerState.activeAudioPlayerId}
                   activeChat={player.id === activeChatPlayer?.id}
@@ -319,6 +338,12 @@ export function MultiStreamViewer() {
                     </button>
                   </div>
                 </div>
+              ) : visiblePlayers.length === 0 ? (
+                <div className={styles.canvasEmptyState}>
+                  <p className={styles.eyebrow}>Canvas hidden</p>
+                  <h2>All player windows are hidden.</h2>
+                  <p>Use Player Controls to show a stream again without removing it.</p>
+                </div>
               ) : null}
             </div>
           </section>
@@ -340,6 +365,7 @@ export function MultiStreamViewer() {
             </div>
 
             <PlayerControlsPanel
+              onToggleHidden={toggleHidden}
               onReload={(playerId) => reloadPlayers([playerId])}
               onSelect={selectPlayer}
               onToggleMute={toggleMute}

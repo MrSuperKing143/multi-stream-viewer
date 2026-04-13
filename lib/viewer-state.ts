@@ -75,6 +75,7 @@ function createViewerPlayer(channel: string, index: number): ViewerPlayer {
       muted: index !== 0,
       volume: index === 0 ? 0.85 : 0.35,
       paused: false,
+      hidden: false,
     },
   };
 }
@@ -173,6 +174,7 @@ export function sanitizeViewerState(input: unknown): ViewerPersistedState | null
                 1,
               ),
               paused: Boolean(player.preferences?.paused),
+              hidden: Boolean(player.preferences?.hidden),
             },
           } satisfies ViewerPlayer;
         })

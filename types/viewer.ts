@@ -10,6 +10,7 @@ export interface PlayerPreferences {
   muted: boolean;
   volume: number;
   paused: boolean;
+  hidden: boolean;
 }
 
 export interface ViewerPlayer {
