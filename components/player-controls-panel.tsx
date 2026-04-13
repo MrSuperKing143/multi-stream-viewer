@@ -80,6 +80,7 @@ interface PlayerActionButtonProps {
   onClick: () => void;
   children: ReactNode;
   active?: boolean;
+  disabled?: boolean;
 }
 
 function PlayerActionButton({
@@ -87,11 +88,13 @@ function PlayerActionButton({
   onClick,
   children,
   active = false,
+  disabled = false,
 }: PlayerActionButtonProps) {
   return (
     <button
       aria-label={label}
       className={cn(styles.iconActionButton, active && styles.iconActionButtonActive)}
+      disabled={disabled}
       onClick={onClick}
       title={label}
       type="button"
@@ -329,6 +332,7 @@ export function PlayerControlsPanel({
           {orderedPlayers.map((player) => {
             const state = resolveState(player, runtimeByPlayerId[player.id]);
             const selected = player.id === selectedPlayerId;
+            const controlsDisabled = state.hidden;
 
             return (
               <article
@@ -349,24 +353,28 @@ export function PlayerControlsPanel({
                   </button>
                   <div className={styles.controlRowActions}>
                     <PlayerActionButton
+                      active={state.hidden}
                       label={`${state.hidden ? "Show" : "Hide"} ${player.channel}`}
                       onClick={() => onToggleHidden(player.id)}
                     >
                       {state.hidden ? <ShowIcon /> : <HideIcon />}
                     </PlayerActionButton>
                     <PlayerActionButton
+                      disabled={controlsDisabled}
                       label={`${state.paused ? "Play" : "Pause"} ${player.channel}`}
                       onClick={() => onTogglePlay(player.id)}
                     >
                       {state.paused ? <PlayIcon /> : <PauseIcon />}
                     </PlayerActionButton>
                     <PlayerActionButton
+                      disabled={controlsDisabled}
                       label={`${state.muted ? "Unmute" : "Mute"} ${player.channel}`}
                       onClick={() => onToggleMute(player.id)}
                     >
                       {state.muted ? <MuteIcon /> : <VolumeIcon />}
                     </PlayerActionButton>
                     <PlayerActionButton
+                      disabled={controlsDisabled}
                       label={`Reload ${player.channel}`}
                       onClick={() => onReload(player.id)}
                     >
@@ -377,7 +385,7 @@ export function PlayerControlsPanel({
 
                 <PlayerVolumeControl
                   channel={player.channel}
-                  disabled={state.muted}
+                  disabled={controlsDisabled || state.muted}
                   onVolumeChange={onVolumeChange}
                   playerId={player.id}
                   volume={state.volume}
