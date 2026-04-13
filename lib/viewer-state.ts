@@ -73,7 +73,7 @@ function createViewerPlayer(channel: string, index: number): ViewerPlayer {
     layout: createPlayerLayout(index),
     preferences: {
       muted: index !== 0,
-      volume: index === 0 ? 0.85 : 0.35,
+      volume: 0.1,
       paused: false,
       hidden: false,
     },
@@ -434,24 +434,47 @@ export function viewerReducer(
       };
 
     case "set-player-preferences":
-      return {
-        ...state,
-        players: state.players.map((player) =>
-          player.id === action.playerId
-            ? {
-                ...player,
-                preferences: {
-                  ...player.preferences,
-                  ...action.preferences,
-                  volume:
-                    action.preferences.volume === undefined
-                      ? player.preferences.volume
-                      : clamp(action.preferences.volume, 0, 1),
-                },
-              }
-            : player,
-        ),
-      };
+      {
+        let changed = false;
+
+        const nextPlayers = state.players.map((player) => {
+          if (player.id !== action.playerId) {
+            return player;
+          }
+
+          const nextPreferences = {
+            ...player.preferences,
+            ...action.preferences,
+            volume:
+              action.preferences.volume === undefined
+                ? player.preferences.volume
+                : clamp(action.preferences.volume, 0, 1),
+          };
+
+          if (
+            player.preferences.muted === nextPreferences.muted &&
+            player.preferences.volume === nextPreferences.volume &&
+            player.preferences.paused === nextPreferences.paused &&
+            player.preferences.hidden === nextPreferences.hidden
+          ) {
+            return player;
+          }
+
+          changed = true;
+
+          return {
+            ...player,
+            preferences: nextPreferences,
+          };
+        });
+
+        return changed
+          ? {
+              ...state,
+              players: nextPlayers,
+            }
+          : state;
+      }
 
     case "mute-all":
       return {

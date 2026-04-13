@@ -50,6 +50,26 @@ function getPlayerZIndex(
   return streamStackOrder === "top-above-bottom" ? playerCount - order + 1 : order;
 }
 
+function getRuntimePreferenceVolume(
+  player: ViewerPlayer,
+  runtime: PlayerRuntimeState,
+) {
+  return typeof runtime.volume === "number" && Number.isFinite(runtime.volume)
+    ? runtime.volume
+    : player.preferences.volume;
+}
+
+function runtimeMatchesPreferences(
+  player: ViewerPlayer,
+  runtime: PlayerRuntimeState,
+) {
+  return (
+    player.preferences.muted === runtime.muted &&
+    player.preferences.paused === runtime.paused &&
+    player.preferences.volume === getRuntimePreferenceVolume(player, runtime)
+  );
+}
+
 export function MultiStreamViewer() {
   const [viewerState, dispatch] = useReducer(
     viewerReducer,
@@ -74,6 +94,24 @@ export function MultiStreamViewer() {
           ...current,
           [playerId]: runtime,
         };
+      });
+    });
+
+    const player = findPlayer(playerId);
+
+    if (!player || !runtime.ready || runtime.error || runtimeMatchesPreferences(player, runtime)) {
+      return;
+    }
+
+    startTransition(() => {
+      dispatch({
+        type: "set-player-preferences",
+        playerId,
+        preferences: {
+          muted: runtime.muted,
+          paused: runtime.paused,
+          volume: getRuntimePreferenceVolume(player, runtime),
+        },
       });
     });
   }
