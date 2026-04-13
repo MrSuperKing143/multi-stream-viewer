@@ -68,6 +68,7 @@ export function useTwitchPlayer({
   const hostRef = useRef<HTMLDivElement>(null);
   const playerRef = useRef<TwitchEmbed.PlayerInstance | null>(null);
   const pollRef = useRef<number | null>(null);
+  const readyRef = useRef(false);
   const preferencesRef = useRef(preferences);
   const [status, setStatus] = useState<PlayerRuntimeState>(() =>
     normalizeRuntimeState({
@@ -113,14 +114,15 @@ export function useTwitchPlayer({
 
   const syncFromPlayer = useEffectEvent(() => {
     const player = playerRef.current;
+    const ready = readyRef.current;
 
     if (!player) {
       return;
     }
 
     const nextState: PlayerRuntimeState = {
-      ready: true,
-      loading: false,
+      ready,
+      loading: !ready,
       muted: preferences.muted,
       volume: preferences.volume,
       paused: preferences.paused,
@@ -167,13 +169,13 @@ export function useTwitchPlayer({
   useEffect(() => {
     let cancelled = false;
     let detachListeners: Array<() => void> = [];
-    let initializeTimer: number | null = null;
     const initialPreferences = preferencesRef.current;
 
     if (!hostRef.current) {
       return;
     }
 
+    readyRef.current = false;
     hostRef.current.innerHTML = "";
     publishState({
       ready: false,
@@ -217,18 +219,34 @@ export function useTwitchPlayer({
 
         const controller: TwitchPlayerController = {
           play: () => {
+            if (!readyRef.current) {
+              return;
+            }
+
             safeRun(() => playerRef.current?.play?.());
             window.setTimeout(syncFromPlayer, 120);
           },
           pause: () => {
+            if (!readyRef.current) {
+              return;
+            }
+
             safeRun(() => playerRef.current?.pause?.());
             window.setTimeout(syncFromPlayer, 120);
           },
           setMuted: (muted) => {
+            if (!readyRef.current) {
+              return;
+            }
+
             safeRun(() => playerRef.current?.setMuted(muted));
             window.setTimeout(syncFromPlayer, 120);
           },
           setVolume: (volume) => {
+            if (!readyRef.current) {
+              return;
+            }
+
             safeRun(() => playerRef.current?.setVolume(volume));
             window.setTimeout(syncFromPlayer, 120);
           },
@@ -237,41 +255,42 @@ export function useTwitchPlayer({
 
         publishController(controller);
 
-        const attachListener = (eventName: string | undefined) => {
+        const attachListener = (
+          eventName: string | undefined,
+          onEvent: () => void = syncFromPlayer,
+        ) => {
           if (!eventName || !player.addEventListener) {
             return undefined;
           }
 
-          const listener = () => syncFromPlayer();
+          const listener = () => onEvent();
           player.addEventListener(eventName, listener);
           return () => player.removeEventListener?.(eventName, listener);
         };
 
+        const handleReady = () => {
+          if (cancelled) {
+            return;
+          }
+
+          readyRef.current = true;
+          syncFromPlayer();
+
+          if (pollRef.current) {
+            window.clearInterval(pollRef.current);
+          }
+
+          pollRef.current = window.setInterval(syncFromPlayer, 1500);
+        };
+
         detachListeners = [
-          attachListener(Twitch.Player.READY ?? "ready"),
+          attachListener(Twitch.Player.READY ?? "ready", handleReady),
           attachListener(Twitch.Player.PLAY ?? "play"),
           attachListener(Twitch.Player.PAUSE ?? "pause"),
           attachListener(Twitch.Player.ENDED ?? "ended"),
           attachListener(Twitch.Player.ONLINE ?? "online"),
           attachListener(Twitch.Player.OFFLINE ?? "offline"),
         ].filter((listener): listener is () => void => Boolean(listener));
-
-        initializeTimer = window.setTimeout(() => {
-          if (cancelled) {
-            return;
-          }
-
-          safeRun(() => player.setMuted(initialPreferences.muted));
-          safeRun(() => player.setVolume(initialPreferences.volume));
-
-          if (initialPreferences.paused) {
-            safeRun(() => player.pause?.());
-          }
-
-          syncFromPlayer();
-        }, 500);
-
-        pollRef.current = window.setInterval(syncFromPlayer, 1500);
       })
       .catch((error: unknown) => {
         publishState({
@@ -289,11 +308,8 @@ export function useTwitchPlayer({
 
     return () => {
       cancelled = true;
+      readyRef.current = false;
       publishController(null);
-
-      if (initializeTimer) {
-        window.clearTimeout(initializeTimer);
-      }
 
       if (pollRef.current) {
         window.clearInterval(pollRef.current);
