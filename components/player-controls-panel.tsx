@@ -391,7 +391,7 @@ export function PlayerControlsPanel({
                   volume={state.volume}
                 />
 
-                {state.ready ? null : (
+                {state.hidden || state.ready ? null : (
                   <p className={styles.controlRowMeta}>
                     {state.error
                       ? state.error
