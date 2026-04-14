@@ -77,7 +77,7 @@ function createViewerPlayer(channel: string, index: number): ViewerPlayer {
     channel,
     layout: createPlayerLayout(index),
     preferences: {
-      muted: index !== 0,
+      muted: false,
       volume: 0.1,
       paused: false,
       hidden: false,
