@@ -132,7 +132,8 @@ export function useTwitchPlayer({
     try {
       nextState.muted = player.getMuted();
       const volume = player.getVolume();
-      nextState.volume = Number.isFinite(volume) ? volume : preferences.volume;
+      nextState.volume =
+        nextState.muted || !Number.isFinite(volume) ? preferences.volume : volume;
       nextState.paused = player.isPaused?.() ?? preferences.paused;
     } catch {
       // Keep the last requested values if Twitch does not expose fresh state yet.
