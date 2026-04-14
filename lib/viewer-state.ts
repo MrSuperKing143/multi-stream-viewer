@@ -28,11 +28,16 @@ export const DEFAULT_RUNTIME_STATUS = {
   muted: true,
   volume: 0.2,
   paused: false,
+  quality: "",
   error: null,
 };
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max);
+}
+
+function normalizeQuality(value: unknown) {
+  return typeof value === "string" ? value.trim() : "";
 }
 
 function createPlayerId() {
@@ -76,6 +81,7 @@ function createViewerPlayer(channel: string, index: number): ViewerPlayer {
       volume: 0.1,
       paused: false,
       hidden: false,
+      quality: "",
     },
   };
 }
@@ -175,6 +181,7 @@ export function sanitizeViewerState(input: unknown): ViewerPersistedState | null
               ),
               paused: Boolean(player.preferences?.paused),
               hidden: Boolean(player.preferences?.hidden),
+              quality: normalizeQuality(player.preferences?.quality),
             },
           } satisfies ViewerPlayer;
         })
@@ -449,13 +456,18 @@ export function viewerReducer(
               action.preferences.volume === undefined
                 ? player.preferences.volume
                 : clamp(action.preferences.volume, 0, 1),
+            quality:
+              action.preferences.quality === undefined
+                ? player.preferences.quality
+                : normalizeQuality(action.preferences.quality),
           };
 
           if (
             player.preferences.muted === nextPreferences.muted &&
             player.preferences.volume === nextPreferences.volume &&
             player.preferences.paused === nextPreferences.paused &&
-            player.preferences.hidden === nextPreferences.hidden
+            player.preferences.hidden === nextPreferences.hidden &&
+            player.preferences.quality === nextPreferences.quality
           ) {
             return player;
           }

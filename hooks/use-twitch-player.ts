@@ -32,10 +32,15 @@ function clampVolume(volume: number) {
   return Math.min(Math.max(volume, 0), 1);
 }
 
+function normalizeQuality(quality: unknown) {
+  return typeof quality === "string" ? quality.trim() : "";
+}
+
 function normalizeRuntimeState(state: PlayerRuntimeState): PlayerRuntimeState {
   return {
     ...state,
     volume: Math.round(clampVolume(state.volume) * 100) / 100,
+    quality: normalizeQuality(state.quality),
   };
 }
 
@@ -46,6 +51,7 @@ function isSameRuntimeState(a: PlayerRuntimeState, b: PlayerRuntimeState) {
     a.muted === b.muted &&
     a.volume === b.volume &&
     a.paused === b.paused &&
+    a.quality === b.quality &&
     a.error === b.error
   );
 }
@@ -77,6 +83,7 @@ export function useTwitchPlayer({
       muted: preferences.muted,
       volume: preferences.volume,
       paused: preferences.paused,
+      quality: preferences.quality,
       error: null,
     }),
   );
@@ -126,6 +133,7 @@ export function useTwitchPlayer({
       muted: preferences.muted,
       volume: preferences.volume,
       paused: preferences.paused,
+      quality: preferences.quality,
       error: null,
     };
 
@@ -135,6 +143,8 @@ export function useTwitchPlayer({
       nextState.volume =
         nextState.muted || !Number.isFinite(volume) ? preferences.volume : volume;
       nextState.paused = player.isPaused?.() ?? preferences.paused;
+      nextState.quality =
+        normalizeQuality(player.getQuality?.()) || preferences.quality;
     } catch {
       // Keep the last requested values if Twitch does not expose fresh state yet.
     }
@@ -159,6 +169,7 @@ export function useTwitchPlayer({
       muted: initialPreferences.muted,
       volume: initialPreferences.volume,
       paused: initialPreferences.paused,
+      quality: initialPreferences.quality,
       error: null,
     });
 
@@ -226,6 +237,20 @@ export function useTwitchPlayer({
             safeRun(() => playerRef.current?.setVolume(volume));
             window.setTimeout(syncFromPlayer, 120);
           },
+          setQuality: (quality) => {
+            if (!readyRef.current) {
+              return;
+            }
+
+            const nextQuality = normalizeQuality(quality);
+
+            if (!nextQuality) {
+              return;
+            }
+
+            safeRun(() => playerRef.current?.setQuality?.(nextQuality));
+            window.setTimeout(syncFromPlayer, 120);
+          },
           sync: syncFromPlayer,
         };
 
@@ -254,6 +279,12 @@ export function useTwitchPlayer({
 
           safeRun(() => player.setMuted(nextPreferences.muted));
           safeRun(() => player.setVolume(nextPreferences.volume));
+
+          const nextQuality = normalizeQuality(nextPreferences.quality);
+
+          if (nextQuality) {
+            safeRun(() => player.setQuality?.(nextQuality));
+          }
 
           if (nextPreferences.paused) {
             safeRun(() => player.pause?.());
@@ -285,6 +316,7 @@ export function useTwitchPlayer({
           muted: initialPreferences.muted,
           volume: initialPreferences.volume,
           paused: initialPreferences.paused,
+          quality: initialPreferences.quality,
           error:
             error instanceof Error
               ? error.message

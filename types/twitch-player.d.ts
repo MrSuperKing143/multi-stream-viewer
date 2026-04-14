@@ -24,6 +24,8 @@ declare global {
       getMuted: () => boolean;
       setVolume: (volume: number) => void;
       getVolume: () => number;
+      setQuality?: (quality: string) => void;
+      getQuality?: () => string;
       isPaused?: () => boolean;
       destroy?: () => void;
       addEventListener?: (event: string, callback: () => void) => void;

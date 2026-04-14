@@ -6,11 +6,14 @@ export interface PlayerLayout {
   zIndex: number;
 }
 
+export type PlayerQuality = string;
+
 export interface PlayerPreferences {
   muted: boolean;
   volume: number;
   paused: boolean;
   hidden: boolean;
+  quality: PlayerQuality;
 }
 
 export interface ViewerPlayer {
@@ -42,6 +45,7 @@ export interface PlayerRuntimeState {
   muted: boolean;
   volume: number;
   paused: boolean;
+  quality: PlayerQuality;
   error: string | null;
 }
 
@@ -50,6 +54,7 @@ export interface TwitchPlayerController {
   pause: () => void;
   setMuted: (muted: boolean) => void;
   setVolume: (volume: number) => void;
+  setQuality: (quality: PlayerQuality) => void;
   sync: () => void;
 }
 
@@ -57,6 +62,7 @@ export interface ResolvedPlayerState {
   muted: boolean;
   paused: boolean;
   volume: number;
+  quality: PlayerQuality;
   ready: boolean;
   loading: boolean;
   error: string | null;

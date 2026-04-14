@@ -38,6 +38,7 @@ function isSameRuntimeState(
     current?.muted === next.muted &&
     current?.volume === next.volume &&
     current?.paused === next.paused &&
+    current?.quality === next.quality &&
     current?.error === next.error
   );
 }
@@ -59,6 +60,13 @@ function getRuntimePreferenceVolume(
     : player.preferences.volume;
 }
 
+function getRuntimePreferenceQuality(
+  player: ViewerPlayer,
+  runtime: PlayerRuntimeState,
+) {
+  return runtime.quality || player.preferences.quality;
+}
+
 function runtimeMatchesPreferences(
   player: ViewerPlayer,
   runtime: PlayerRuntimeState,
@@ -66,7 +74,8 @@ function runtimeMatchesPreferences(
   return (
     player.preferences.muted === runtime.muted &&
     player.preferences.paused === runtime.paused &&
-    player.preferences.volume === getRuntimePreferenceVolume(player, runtime)
+    player.preferences.volume === getRuntimePreferenceVolume(player, runtime) &&
+    player.preferences.quality === getRuntimePreferenceQuality(player, runtime)
   );
 }
 
@@ -111,6 +120,7 @@ export function MultiStreamViewer() {
           muted: runtime.muted,
           paused: runtime.paused,
           volume: getRuntimePreferenceVolume(player, runtime),
+          quality: getRuntimePreferenceQuality(player, runtime),
         },
       });
     });
