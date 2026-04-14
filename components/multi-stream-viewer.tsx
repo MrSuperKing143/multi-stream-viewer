@@ -4,6 +4,7 @@ import {
   startTransition,
   type CSSProperties,
   useEffect,
+  useEffectEvent,
   useReducer,
   useRef,
   useState,
@@ -90,6 +91,8 @@ export function MultiStreamViewer() {
   >({});
   const [reloadTokens, setReloadTokens] = useState<Record<string, number>>({});
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const canvasRef = useRef<HTMLDivElement>(null);
+  const canvasSizeRef = useRef<{ width: number; height: number } | null>(null);
   const controllersRef = useRef<Record<string, TwitchPlayerController>>({});
 
   function registerRuntimeState(playerId: string, runtime: PlayerRuntimeState) {
@@ -138,6 +141,62 @@ export function MultiStreamViewer() {
     document.body.classList.add("hasModalOpen");
     return () => document.body.classList.remove("hasModalOpen");
   }, [settingsOpen]);
+
+  const syncCanvasLayout = useEffectEvent((width: number, height: number) => {
+    const nextCanvas = {
+      width: Math.round(width),
+      height: Math.round(height),
+    };
+    const previousCanvas = canvasSizeRef.current;
+
+    if (nextCanvas.width <= 0 || nextCanvas.height <= 0) {
+      return;
+    }
+
+    if (
+      previousCanvas &&
+      previousCanvas.width === nextCanvas.width &&
+      previousCanvas.height === nextCanvas.height
+    ) {
+      return;
+    }
+
+    canvasSizeRef.current = nextCanvas;
+
+    if (!previousCanvas || viewerState.players.length === 0) {
+      return;
+    }
+
+    startTransition(() => {
+      dispatch({
+        type: "resize-canvas",
+        previousCanvas,
+        nextCanvas,
+      });
+    });
+  });
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+
+    if (!canvas || typeof ResizeObserver === "undefined") {
+      return;
+    }
+
+    const resizeObserver = new ResizeObserver((entries) => {
+      const entry = entries[0];
+
+      if (!entry) {
+        return;
+      }
+
+      syncCanvasLayout(entry.contentRect.width, entry.contentRect.height);
+    });
+
+    resizeObserver.observe(canvas);
+
+    return () => resizeObserver.disconnect();
+  }, []);
 
   const activeChatPlayer =
     viewerState.players.find(
@@ -319,6 +378,7 @@ export function MultiStreamViewer() {
                 styles.viewerCanvas,
                 viewerState.settings.showGrid && styles.viewerCanvasGridVisible,
               )}
+              ref={canvasRef}
               style={
                 {
                   "--grid-size": `${viewerState.settings.gridSize}px`,

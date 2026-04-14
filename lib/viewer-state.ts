@@ -32,6 +32,11 @@ export const DEFAULT_RUNTIME_STATUS = {
   error: null,
 };
 
+interface CanvasSize {
+  width: number;
+  height: number;
+}
+
 function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max);
 }
@@ -134,6 +139,59 @@ function cleanLayout(value: Partial<PlayerLayout> | undefined, fallback: PlayerL
   };
 }
 
+function cleanCanvasSize(value: CanvasSize | undefined) {
+  const width = Math.round(Number(value?.width));
+  const height = Math.round(Number(value?.height));
+
+  if (!Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0) {
+    return null;
+  }
+
+  return { width, height } satisfies CanvasSize;
+}
+
+function areLayoutsEqual(left: PlayerLayout, right: PlayerLayout) {
+  return (
+    left.x === right.x &&
+    left.y === right.y &&
+    left.width === right.width &&
+    left.height === right.height &&
+    left.zIndex === right.zIndex
+  );
+}
+
+function scaleLayoutToCanvas(
+  layout: PlayerLayout,
+  previousCanvas: CanvasSize,
+  nextCanvas: CanvasSize,
+) {
+  const widthRatio = nextCanvas.width / previousCanvas.width;
+  const heightRatio = nextCanvas.height / previousCanvas.height;
+  const nextWidth = clamp(
+    Math.round(layout.width * widthRatio),
+    TWITCH_MIN_PLAYER_SIZE.width,
+    Math.max(nextCanvas.width, TWITCH_MIN_PLAYER_SIZE.width),
+  );
+  const nextHeight = clamp(
+    Math.round(layout.height * heightRatio),
+    TWITCH_MIN_PLAYER_SIZE.height,
+    Math.max(nextCanvas.height, TWITCH_MIN_PLAYER_SIZE.height),
+  );
+  const maxX = Math.max(nextCanvas.width - nextWidth, 0);
+  const maxY = Math.max(nextCanvas.height - nextHeight, 0);
+
+  return cleanLayout(
+    {
+      x: clamp(Math.round(layout.x * widthRatio), 0, maxX),
+      y: clamp(Math.round(layout.y * heightRatio), 0, maxY),
+      width: nextWidth,
+      height: nextHeight,
+      zIndex: layout.zIndex,
+    },
+    layout,
+  );
+}
+
 export function createDefaultViewerState(): ViewerPersistedState {
   return {
     players: [],
@@ -224,6 +282,11 @@ export type ViewerAction =
   | { type: "remove-player"; playerId: string }
   | { type: "reorder-player"; playerId: string; direction: -1 | 1 }
   | { type: "update-layout"; playerId: string; layout: Partial<PlayerLayout> }
+  | {
+      type: "resize-canvas";
+      previousCanvas: CanvasSize;
+      nextCanvas: CanvasSize;
+    }
   | { type: "select-player"; playerId: string | null }
   | { type: "set-chat-player"; playerId: string | null }
   | { type: "cycle-chat"; direction: -1 | 1 }
@@ -385,6 +448,48 @@ export function viewerReducer(
             : player,
         ),
       };
+
+    case "resize-canvas": {
+      const previousCanvas = cleanCanvasSize(action.previousCanvas);
+      const nextCanvas = cleanCanvasSize(action.nextCanvas);
+
+      if (
+        !previousCanvas ||
+        !nextCanvas ||
+        (previousCanvas.width === nextCanvas.width &&
+          previousCanvas.height === nextCanvas.height)
+      ) {
+        return state;
+      }
+
+      let changed = false;
+
+      const nextPlayers = state.players.map((player) => {
+        const nextLayout = scaleLayoutToCanvas(
+          player.layout,
+          previousCanvas,
+          nextCanvas,
+        );
+
+        if (areLayoutsEqual(player.layout, nextLayout)) {
+          return player;
+        }
+
+        changed = true;
+
+        return {
+          ...player,
+          layout: nextLayout,
+        };
+      });
+
+      return changed
+        ? {
+            ...state,
+            players: nextPlayers,
+          }
+        : state;
+    }
 
     case "select-player":
       return {
