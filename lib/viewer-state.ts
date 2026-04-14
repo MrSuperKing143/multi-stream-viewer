@@ -167,23 +167,33 @@ function scaleLayoutToCanvas(
 ) {
   const widthRatio = nextCanvas.width / previousCanvas.width;
   const heightRatio = nextCanvas.height / previousCanvas.height;
-  const nextWidth = clamp(
-    Math.round(layout.width * widthRatio),
-    TWITCH_MIN_PLAYER_SIZE.width,
-    Math.max(nextCanvas.width, TWITCH_MIN_PLAYER_SIZE.width),
-  );
-  const nextHeight = clamp(
-    Math.round(layout.height * heightRatio),
-    TWITCH_MIN_PLAYER_SIZE.height,
-    Math.max(nextCanvas.height, TWITCH_MIN_PLAYER_SIZE.height),
-  );
+  const nextWidthScale =
+    widthRatio > 1 && layout.width <= TWITCH_MIN_PLAYER_SIZE.width
+      ? 1
+      : Math.max(widthRatio, TWITCH_MIN_PLAYER_SIZE.width / layout.width);
+  const nextHeightScale =
+    heightRatio > 1 && layout.height <= TWITCH_MIN_PLAYER_SIZE.height
+      ? 1
+      : Math.max(heightRatio, TWITCH_MIN_PLAYER_SIZE.height / layout.height);
+  const nextWidth = Math.round(layout.width * nextWidthScale);
+  const nextHeight = Math.round(layout.height * nextHeightScale);
   const maxX = Math.max(nextCanvas.width - nextWidth, 0);
   const maxY = Math.max(nextCanvas.height - nextHeight, 0);
+  const rightDistance = previousCanvas.width - (layout.x + layout.width);
+  const bottomDistance = previousCanvas.height - (layout.y + layout.height);
+  const anchorRight = rightDistance < layout.x;
+  const anchorBottom = bottomDistance < layout.y;
+  const nextX = anchorRight
+    ? nextCanvas.width - nextWidth - rightDistance
+    : layout.x;
+  const nextY = anchorBottom
+    ? nextCanvas.height - nextHeight - bottomDistance
+    : layout.y;
 
   return cleanLayout(
     {
-      x: clamp(Math.round(layout.x * widthRatio), 0, maxX),
-      y: clamp(Math.round(layout.y * heightRatio), 0, maxY),
+      x: clamp(Math.round(nextX), 0, maxX),
+      y: clamp(Math.round(nextY), 0, maxY),
       width: nextWidth,
       height: nextHeight,
       zIndex: layout.zIndex,
@@ -284,8 +294,9 @@ export type ViewerAction =
   | { type: "update-layout"; playerId: string; layout: Partial<PlayerLayout> }
   | {
       type: "resize-canvas";
-      previousCanvas: CanvasSize;
+      sourceCanvas: CanvasSize;
       nextCanvas: CanvasSize;
+      sourceLayouts: Record<string, PlayerLayout>;
     }
   | { type: "select-player"; playerId: string | null }
   | { type: "set-chat-player"; playerId: string | null }
@@ -450,14 +461,14 @@ export function viewerReducer(
       };
 
     case "resize-canvas": {
-      const previousCanvas = cleanCanvasSize(action.previousCanvas);
+      const sourceCanvas = cleanCanvasSize(action.sourceCanvas);
       const nextCanvas = cleanCanvasSize(action.nextCanvas);
 
       if (
-        !previousCanvas ||
+        !sourceCanvas ||
         !nextCanvas ||
-        (previousCanvas.width === nextCanvas.width &&
-          previousCanvas.height === nextCanvas.height)
+        (sourceCanvas.width === nextCanvas.width &&
+          sourceCanvas.height === nextCanvas.height)
       ) {
         return state;
       }
@@ -465,9 +476,10 @@ export function viewerReducer(
       let changed = false;
 
       const nextPlayers = state.players.map((player) => {
+        const sourceLayout = action.sourceLayouts[player.id] ?? player.layout;
         const nextLayout = scaleLayoutToCanvas(
-          player.layout,
-          previousCanvas,
+          sourceLayout,
+          sourceCanvas,
           nextCanvas,
         );
 

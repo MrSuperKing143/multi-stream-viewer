@@ -18,12 +18,14 @@ import { cn } from "@/lib/cn";
 import {
   createDefaultViewerState,
   normalizeChannelInput,
+  type ViewerAction,
   viewerReducer,
 } from "@/lib/viewer-state";
 import { CogIcon } from "@/components/control-icons";
 import { loadViewerState, saveViewerState } from "@/lib/viewer-storage";
 import styles from "@/styles/multi-stream-viewer.module.scss";
 import type {
+  PlayerLayout,
   PlayerRuntimeState,
   TwitchPlayerController,
   ViewerPlayer,
@@ -80,6 +82,18 @@ function runtimeMatchesPreferences(
   );
 }
 
+interface CanvasResizeBaseline {
+  canvas: { width: number; height: number };
+  layoutsByPlayerId: Record<string, PlayerLayout>;
+}
+
+function snapshotPlayerLayouts(players: ViewerPlayer[]) {
+  return players.reduce<Record<string, PlayerLayout>>((layoutsByPlayerId, player) => {
+    layoutsByPlayerId[player.id] = { ...player.layout };
+    return layoutsByPlayerId;
+  }, {});
+}
+
 export function MultiStreamViewer() {
   const [viewerState, dispatch] = useReducer(
     viewerReducer,
@@ -93,7 +107,33 @@ export function MultiStreamViewer() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const canvasRef = useRef<HTMLDivElement>(null);
   const canvasSizeRef = useRef<{ width: number; height: number } | null>(null);
+  const canvasResizeBaselineRef = useRef<CanvasResizeBaseline | null>(null);
   const controllersRef = useRef<Record<string, TwitchPlayerController>>({});
+
+  function updateCanvasResizeBaseline(nextPlayers: ViewerPlayer[]) {
+    const canvas = canvasSizeRef.current;
+
+    if (!canvas) {
+      return;
+    }
+
+    canvasResizeBaselineRef.current = {
+      canvas,
+      layoutsByPlayerId: snapshotPlayerLayouts(nextPlayers),
+    };
+  }
+
+  function dispatchViewerAction(
+    action: ViewerAction,
+    options?: { updateCanvasResizeBaseline?: boolean },
+  ) {
+    if (options?.updateCanvasResizeBaseline) {
+      const nextState = viewerReducer(viewerState, action);
+      updateCanvasResizeBaseline(nextState.players);
+    }
+
+    dispatch(action);
+  }
 
   function registerRuntimeState(playerId: string, runtime: PlayerRuntimeState) {
     startTransition(() => {
@@ -147,31 +187,49 @@ export function MultiStreamViewer() {
       width: Math.round(width),
       height: Math.round(height),
     };
-    const previousCanvas = canvasSizeRef.current;
+    const currentCanvas = canvasSizeRef.current;
 
     if (nextCanvas.width <= 0 || nextCanvas.height <= 0) {
       return;
     }
 
     if (
-      previousCanvas &&
-      previousCanvas.width === nextCanvas.width &&
-      previousCanvas.height === nextCanvas.height
+      currentCanvas &&
+      currentCanvas.width === nextCanvas.width &&
+      currentCanvas.height === nextCanvas.height
     ) {
       return;
     }
 
     canvasSizeRef.current = nextCanvas;
 
-    if (!previousCanvas || viewerState.players.length === 0) {
+    if (viewerState.players.length === 0) {
+      canvasResizeBaselineRef.current = {
+        canvas: nextCanvas,
+        layoutsByPlayerId: {},
+      };
+      return;
+    }
+
+    if (!canvasResizeBaselineRef.current) {
+      canvasResizeBaselineRef.current = {
+        canvas: currentCanvas ?? nextCanvas,
+        layoutsByPlayerId: snapshotPlayerLayouts(viewerState.players),
+      };
+    }
+
+    const resizeBaseline = canvasResizeBaselineRef.current;
+
+    if (!resizeBaseline) {
       return;
     }
 
     startTransition(() => {
       dispatch({
         type: "resize-canvas",
-        previousCanvas,
+        sourceCanvas: resizeBaseline.canvas,
         nextCanvas,
+        sourceLayouts: resizeBaseline.layoutsByPlayerId,
       });
     });
   });
@@ -255,10 +313,10 @@ export function MultiStreamViewer() {
       return 0;
     }
 
-    dispatch({
+    dispatchViewerAction({
       type: "add-players",
       channels: uniqueChannels,
-    });
+    }, { updateCanvasResizeBaseline: true });
 
     return uniqueChannels.length;
   }
@@ -393,17 +451,17 @@ export function MultiStreamViewer() {
                   key={player.id}
                   onControllerChange={registerController}
                   onLayoutChange={(playerId, layout) =>
-                    dispatch({
+                    dispatchViewerAction({
                       type: "update-layout",
                       playerId,
                       layout,
-                    })
+                    }, { updateCanvasResizeBaseline: true })
                   }
                   onRemove={(playerId) =>
-                    dispatch({
+                    dispatchViewerAction({
                       type: "remove-player",
                       playerId,
-                    })
+                    }, { updateCanvasResizeBaseline: true })
                   }
                   onRuntimeChange={registerRuntimeState}
                   onSelect={selectPlayer}
@@ -511,22 +569,22 @@ export function MultiStreamViewer() {
           onAddStreams={addStreams}
           onClose={() => setSettingsOpen(false)}
           onRemovePlayer={(playerId) =>
-            dispatch({
+            dispatchViewerAction({
               type: "remove-player",
               playerId,
-            })
+            }, { updateCanvasResizeBaseline: true })
           }
           onReorderPlayer={(playerId, direction) =>
-            dispatch({
+            dispatchViewerAction({
               type: "reorder-player",
               playerId,
               direction,
-            })
+            }, { updateCanvasResizeBaseline: true })
           }
           onResetLayout={() =>
-            dispatch({
+            dispatchViewerAction({
               type: "reset-layout",
-            })
+            }, { updateCanvasResizeBaseline: true })
           }
           onSetDefaultChatPlayer={(playerId) =>
             dispatch({
